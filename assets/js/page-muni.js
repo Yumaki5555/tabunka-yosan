@@ -4,14 +4,14 @@
 // 金額は calc.js の breakdown（tools/build.mjs の検算と同じ計算）で事業ごとに出す。集計（summary.json）と合わないときは、
 // 誤った金額を使わせないよう、合計を出さずに「確認中」と表示する。分類の基準は docs/分類と集計の基準.md
 
-import { db, loadDetail, loadPopulation, popOf, status, cell, munisOfPref, ratio, generalOf, cmpNotes } from './store.js';
+import { db, loadDetail, loadPopulation, popOf, status, cell, munisOfPref, ratio, generalOf } from './store.js';
 import { $, $$, esc, yen, yenExact, yenPer, pct, num, diffYen, fyFull, fmtDate, download, copyText, toast, ratioPct, yenShort } from './util.js';
 import { href, currentYear, currentStage, yearPicker, bindYearPicker } from './app.js';
-import { statusBadge, stLabel, relBadge, relName, fieldBadge, fieldLabel, sourceLink, sourceMeta, amountOrStatus, ratioView, scopeNoteHTML, cmpNoteText } from './components.js';
+import { statusBadge, stLabel, relBadge, relName, fieldBadge, fieldLabel, sourceLink, sourceMeta, amountOrStatus, ratioView, scopeNoteHTML } from './components.js';
 import { columnChart, lineChart, stackChart, COLORS } from './charts.js';
 import { FUND_KEYS, FUND_LABELS, COUNTED, breakdown, fieldTotals, valueOf } from './calc.js';
 import { renderUses, coverageHTML, singleCoverageHTML, overlapHTML, breakdownItems } from './uses.js';
-import { RELATION_INFO, SURVEY_INFO, FIELD_INFO, TYPE_INFO, CHECK_INFO, TOTAL_LABEL } from './schema.js';
+import { RELATION_INFO, SURVEY_INFO, FIELD_INFO, TYPE_INFO, CHECK_INFO, TOTAL_LABEL, BETSU_GROUPS, betsuGroupOf } from './schema.js';
 import { ICON } from './icons.js';
 import { budgetCSV } from './export.js';
 
@@ -59,8 +59,7 @@ export async function muniPage(ctx, code) {
   const total = checking ? null : counted;
   const sv = D.survey.find(s => s.fy === fy && s.stage === stage);
   const p = popOf(code, fy);
-  // 比べるときの注意は、ランキング・比較と同じ形（対象の事業を除いた合計つき）で出すので、集計といっしょの cmpNotes から取る
-  const notes = D.notes.filter(n => n.kind !== '比べるときの注意' && (!n.from_fy || n.from_fy <= fy) && (!n.to_fy || n.to_fy >= fy));
+  const notes = D.notes.filter(n => (!n.from_fy || n.from_fy <= fy) && (!n.to_fy || n.to_fy >= fy));
   const yrs = db.years;
   const when = `${fyFull(fy)}・${stage}`;
   const amtWord = stage === '決算' ? '決算額' : '予算';
@@ -72,9 +71,13 @@ export async function muniPage(ctx, code) {
   const usQ = () => useScope === 'self' ? '' : useScope;
   const nRef = bd.u3.length + bd.c4.length + bd.hold.length;
   const mainProjects = D.projects.filter(x => ['①', '②', '③'].includes(x.relation));
-  // 別枠（中国残留邦人等・引揚者などの援護）は合計に入れず、金額を参考として別に示す
+  // 別枠（学校の教員の人件費、中国残留邦人等・引揚者などの援護）は合計に入れず、金額を参考として種類ごとに別に示す
   const bkProjects = D.projects.filter(x => x.relation === '別枠');
-  const bkLine = bkProjects.length ? `<p class="kpi-aside"><b>別枠（合計に入れていない）</b>：中国残留邦人等・引揚者などの援護 ${bd.wb > 0 ? `<b>${esc(yen(bd.wb, { approx: true }))}</b>（${bd.bk.filter(r => r.b).length}事業・${esc(yenExact(bd.wb))}）` : `${bkProjects.length}事業（${esc(when)}の金額の記録なし）`} <a href="${href('/m/' + code, { y: fy, s: sQ(stage), to: 'd-bk' })}" id="bk-link">くわしく</a></p>` : '';
+  const bkGroups = BETSU_GROUPS.map(g => {
+    const rows = bd.bk.filter(r => r.b && betsuGroupOf(r.p.type) === g);
+    return { ...g, projects: bkProjects.filter(x => betsuGroupOf(x.type) === g), rows, amt: rows.reduce((s, r) => s + r.b.amount_yen, 0) };
+  }).filter(g => g.projects.length);
+  const bkLine = bkGroups.length ? `<p class="kpi-aside"><b>別枠（合計に入れていない）</b>：${bkGroups.map(g => `${esc(g.label)} ${g.amt > 0 ? `<b>${esc(yen(g.amt, { approx: true }))}</b>（${g.rows.length}事業・${esc(yenExact(g.amt))}）` : `${g.projects.length}事業（${esc(when)}の金額の記録なし）`}`).join('、')} <a href="${href('/m/' + code, { y: fy, s: sQ(stage), to: 'd-bk' })}" id="bk-link">くわしく</a></p>` : '';
 
   // ① いくら使う？（調べていない・資料がないときは、金額の代わりに状況を書く。0円とは書かない）
   let headValue, headSub = '';
@@ -105,7 +108,6 @@ export async function muniPage(ctx, code) {
     </div>
   </div>
   ${notes.map(n => `<p class="note"><b>${esc(n.kind)}：</b>${esc(n.note)}${n.source_url ? ` <a href="${esc(n.source_url)}" target="_blank" rel="noopener">出典</a>` : ''}</p>`).join('')}
-  ${cmpNotes(code, fy, stage).map(n => `<p class="note"><b>ほかの自治体と比べるときの注意：</b>${esc(cmpNoteText(n, total))}${n.url ? ` <a href="${esc(n.url)}" target="_blank" rel="noopener">出典</a>` : ''}</p>`).join('')}
 
   <section class="kpi-card" aria-labelledby="kpi-h">
     <p class="kpi-when"><span>${esc(when)}</span>${statusBadge(st)}</p>
@@ -140,7 +142,7 @@ export async function muniPage(ctx, code) {
     <details class="dd" id="d-per"><summary>${ICON.people}<span>人口当たりの金額</span></summary><div id="per-box"></div></details>
     <details class="dd" id="d-fund"><summary>${ICON.yen}<span>財源（お金の出どころ）</span></summary><div id="fund-box"></div></details>
     <details class="dd" id="d-ref"><summary>${ICON.doc}<span>合計に入れていない関連事業</span><small>${nRef + bd.ex.length ? `${nRef + bd.ex.length}件` : ''}</small></summary><div id="ref-box"></div></details>
-    ${bkProjects.length ? `<details class="dd" id="d-bk"><summary>${ICON.doc}<span>別枠：中国残留邦人等・引揚者などの援護</span><small>${bkProjects.length}件</small></summary><div id="bk-box"></div></details>` : ''}
+    ${bkProjects.length ? `<details class="dd" id="d-bk"><summary>${ICON.doc}<span>別枠：合計に入れていない経費</span><small>${bkProjects.length}件</small></summary><div id="bk-box"></div></details>` : ''}
     <details class="dd" id="d-check"><summary>${ICON.check}<span>どこまで調べた？（調査状況）</span></summary>${checklistHTML()}<h3>年度ごとの調査状況</h3><div id="survey-box"></div></details>
     <details class="dd" id="method"><summary>${ICON.ruler}<span>集計方法（この金額はどう計算した？）</span></summary><div id="method-box"></div></details>
     ${m.isPref ? `<details class="dd" id="d-munis"><summary>${ICON.city}<span>${esc(m.name)}の市区町村</span></summary><div id="pref-munis"></div></details>` : ''}
@@ -221,7 +223,7 @@ export async function muniPage(ctx, code) {
       ...bd.c4.map(r => [r, `関連事業・参考経費：${esc(r.p.relation_reason || R['④'].desc)}${r.b ? `（事業全体 ${esc(yenExact(r.b.amount_yen))}）` : '（金額の記録なし）'}`]),
       ...bd.hold.map(r => [r, `判定保留：${esc(r.p.relation_reason || R['保留'].desc)}${r.b ? `（事業全体 ${esc(yenExact(r.b.amount_yen))}）` : '（金額の記録なし）'}`]),
       ...bd.ex.map(r => [r, `対象外：${esc(r.p.relation_reason || R['⑤'].desc)}${r.b ? `（事業全体 ${esc(yenExact(r.b.amount_yen))}）` : ''}`]),
-      ...bd.bk.map(r => [r, `別枠（中国残留邦人等・引揚者などの援護）：外国人向けの施策と性格がちがうため、合計に入れず、金額を参考として別に示しています${r.b ? `（${esc(yenExact(r.b.amount_yen))}）` : '（金額の記録なし）'}。`]),
+      ...bd.bk.map(r => { const g = betsuGroupOf(r.p.type); return [r, `別枠（${esc(g.label)}）：${esc(g.why)}、合計に入れず、金額を参考として別に示しています${r.b ? `（${esc(yenExact(r.b.amount_yen))}）` : '（金額の記録なし）'}。`]; }),
       ...bd.dup.map(r => [r, `金額が「${esc(r.host?.name || r.p.included_in)}」の金額にも含まれる（再掲）ため、二重に数えないよう足していません${r.b ? `（${esc(yenExact(r.b.amount_yen))}）` : ''}。`]),
       ...bd.noAmt.map(r => [r, `事業があることは分かっていますが、金額の記録がありません。`]),
       ...bd.pend.map(r => [r, `金額を資料で確認している途中のため（${esc(yenExact(r.b.amount_yen))}）。`]),
@@ -320,7 +322,7 @@ export async function muniPage(ctx, code) {
   else {
     pbox.innerHTML = `${mainProjects.length ? `<h3 class="grp-h">外国人に関係する事業（${mainProjects.length}件）</h3><div class="proj-list">${byAmt(mainProjects).map(pj => projHTML(pj, amtLine(pj, fy, stage))).join('')}</div>` : ''}
       ${refProjects.length ? `<details class="grp"${refProjects.some(x => x.project_id === openPj) ? ' open' : ''}><summary>参考：合計に入れていない関連事業・対象外（${refProjects.length}件）</summary><p class="small muted">国際交流協会の運営補助・姉妹都市交流など、外国人住民などへの支出として金額を特定できない事業や、対象外と判断した事業です。</p><div class="proj-list">${byAmt(refProjects).map(pj => projHTML(pj, amtLine(pj, fy, stage))).join('')}</div></details>` : ''}
-      ${bkProjects.length ? `<details class="grp"${bkProjects.some(x => x.project_id === openPj) ? ' open' : ''}><summary>別枠：中国残留邦人等・引揚者などの援護（${bkProjects.length}件・合計に入れていない）</summary><p class="small muted">${esc(R['別枠'].desc)}</p><div class="proj-list">${byAmt(bkProjects).map(pj => projHTML(pj, amtLine(pj, fy, stage))).join('')}</div></details>` : ''}`;
+      ${bkProjects.length ? `<details class="grp"${bkProjects.some(x => x.project_id === openPj) ? ' open' : ''}><summary>別枠：${esc(bkGroups.map(g => g.label).join('・'))}（${bkProjects.length}件・合計に入れていない）</summary><p class="small muted">${esc(R['別枠'].desc)}</p><div class="proj-list">${byAmt(bkProjects).map(pj => projHTML(pj, amtLine(pj, fy, stage))).join('')}</div></details>` : ''}`;
   }
   function projHTML(pj, a) {
     const bs = D.budgets.filter(b => b.project_id === pj.project_id).sort((x, y) => y.fy - x.fy || x.stage.localeCompare(y.stage));
@@ -368,7 +370,7 @@ export async function muniPage(ctx, code) {
       : `<p class="info">${esc(when)}には、合計に入れていない関連事業は登録されていません。</p>`;
   });
 
-  // ---------- 別枠（中国残留邦人等・引揚者などの援護。合計に入れず、金額を参考として別に示す） ----------
+  // ---------- 別枠（学校の教員の人件費、中国残留邦人等・引揚者などの援護。合計に入れず、金額を参考として種類ごとに別に示す） ----------
   lazy('d-bk', () => {
     const line = pj => {
       const b = budBy.get(`${pj.project_id}|${fy}|${stage}`);
@@ -378,8 +380,9 @@ export async function muniPage(ctx, code) {
       return yen(b.amount_yen);
     };
     $('#bk-box').innerHTML = `<p class="small">${esc(R['別枠'].desc)}</p>
-      <ul class="mini-list">${byAmt(bkProjects).map(pj => `<li><span><a href="${href('/m/' + code, { y: fy, s: sQ(stage), pj: pj.project_id })}">${esc(pj.name)}</a><small>${esc(TYPE_INFO[pj.type]?.label || '')}</small></span><span class="ml-amt"><small>${esc(line(pj))}</small></span></li>`).join('')}</ul>
-      ${bd.wb > 0 ? `<div class="calc-total"><span>別枠の合計（${esc(when)}・${bd.bk.filter(r => r.b).length}事業）</span><b>${esc(yenExact(bd.wb))}</b></div>` : `<p class="info">${esc(when)}の金額の記録はありません。</p>`}
+      ${bkGroups.map(g => `<h3>${esc(g.label)}</h3><p class="small">${esc(g.desc)}</p>
+      <ul class="mini-list">${byAmt(g.projects).map(pj => `<li><span><a href="${href('/m/' + code, { y: fy, s: sQ(stage), pj: pj.project_id })}">${esc(pj.name)}</a><small>${esc(TYPE_INFO[pj.type]?.label || '')}</small></span><span class="ml-amt"><small>${esc(line(pj))}</small></span></li>`).join('')}</ul>
+      ${g.amt > 0 ? `<div class="calc-total"><span>${esc(g.label)}の合計（${esc(when)}・${g.rows.length}事業）</span><b>${esc(yenExact(g.amt))}</b></div>` : `<p class="info">${esc(when)}の金額の記録はありません。</p>`}`).join('')}
       <p class="small muted">この金額は、多文化共生関連予算の合計・地図・ランキング・比較には入れていません。</p>`;
   });
 

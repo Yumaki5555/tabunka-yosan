@@ -14,7 +14,7 @@ async function getJSON(url) {
 }
 
 export const db = {
-  config: null, munis: [], byCode: new Map(), prefs: [], sum: {}, gen: {}, cmp: {}, meta: null, years: [],
+  config: null, munis: [], byCode: new Map(), prefs: [], sum: {}, gen: {}, meta: null, years: [],
   pop: null, popYears: null,
 };
 
@@ -26,7 +26,6 @@ export async function loadCore() {
   db.years = config.years;
   db.sum = summary.sum;
   db.gen = summary.gen || {};
-  db.cmp = summary.cmp || {};
   db.meta = meta;
   db.masterSource = master.source;
   const prefName = {};
@@ -78,12 +77,6 @@ export function metricOf(mode, code, fy, stage, includePartial) {
 // 一般会計の予算総額（確認済みのものだけ。未確認なら null）
 export function generalOf(code, fy, stage = '当初予算') {
   return db.gen?.[code]?.[fy]?.[stage] ?? null;
-}
-// 比べるときの注意（その年度にかかるもの。対象の事業があるときは、その事業が合計に入っている年度・段階だけ）。amt：対象の事業を数えた金額
-export function cmpNotes(code, fy, stage) {
-  return (db.cmp?.[code] || [])
-    .filter(n => (!n.from || n.from <= fy) && (!n.to || n.to >= fy) && (!n.pid || n.x?.[fy]?.[stage] > 0))
-    .map(n => ({ ...n, amt: n.x?.[fy]?.[stage] ?? null }));
 }
 // 一般会計に占める割合（calc.js の ratioOf。{v, num, den, partial, why}）
 export function ratio(code, fy, stage) {

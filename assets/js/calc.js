@@ -4,11 +4,11 @@
 // ・基本集計（多文化共生関連予算）＝ ①外国人等への直接給付・支援 ＋ ②外国人対応の行政経費 ＋ ③一般事業のうち外国人関連部分の金額が資料で分かった分
 //   ①と②は別々にも数える（d1・d2）。③は「うち外国人関連」の金額だけを足す（事業全体の金額は足さない）
 // ・③で部分の金額が分からない事業・④関連事業・参考経費は、事業全体の金額を参考として別に数える（足さない）。⑤対象外と判定保留も足さない
-// ・別枠（中国残留邦人等・引揚者などの援護）も足さず、事業の金額を参考として別に数える（bn・bw）
+// ・別枠（学校の教員の人件費、中国残留邦人等・引揚者などの援護）も足さず、事業の金額を参考として別に数える（bn・bw）
 // ・予算（当初・補正後）と決算は足さない（段階ごとに別の数）
 // ・都道府県と市区町村の合計は足さない（県から市町村への補助が二重に数えられるおそれがあるため）
 
-import { FIELDS } from './schema.js';
+import { FIELDS, betsuGroupOf } from './schema.js';
 import { rawToYen } from './validate.js';
 
 export const FUND_KEYS = ['national', 'pref', 'national_pref', 'bond', 'other', 'general'];
@@ -97,33 +97,6 @@ export function aggregate(d) {
     if (!c.sx) { delete c.sx; delete c.sxn; }
     if (!c.gx) delete c.gx;
     if (!c.bn) { delete c.bn; delete c.bw; }
-  }
-  return out;
-}
-
-// 比べるときの注意（自治体の注記のうち種類が「比べるときの注意」の行）を、自治体ごとにまとめる（ランキング・比較・自治体のページで出す）。
-// 対象の事業IDがあれば、その事業を基本集計に数えた金額を年度・段階ごとに x に添える（画面で「この事業を除いた合計」を出すため）
-export function compareNotes(d) {
-  const projects = new Map(d.projects.map(p => [p.project_id, p]));
-  const out = {};
-  for (const n of d.notes || []) {
-    if (n.kind !== '比べるときの注意') continue;
-    const p = n.project_id ? projects.get(n.project_id) : null;
-    const o = { note: n.note };
-    if (n.from_fy) o.from = n.from_fy;
-    if (n.to_fy) o.to = n.to_fy;
-    if (p) {
-      o.pid = p.project_id; o.name = p.name;
-      const x = {};
-      for (const b of d.budgets) {
-        if (b.project_id !== p.project_id) continue;
-        const amt = countedAmount(p, b);
-        if (amt !== null) (x[b.fy] ??= {})[b.stage] = amt;
-      }
-      o.x = x;
-    }
-    if (n.source_url) o.url = n.source_url;
-    (out[n.code] ??= []).push(o);
   }
   return out;
 }
@@ -366,7 +339,7 @@ export function breakdown(d, code, fy, stage, expected) {
       o.c4.length ? `④関連事業・参考経費 ${o.c4.length}件` : '',
       o.ex.length ? `⑤対象外 ${o.ex.length}件` : '',
       o.hold.length ? `判定保留 ${o.hold.length}件` : '',
-      o.bk.length ? `別枠（中国残留邦人等・引揚者などの援護）${o.bk.length}件` : '',
+      o.bk.length ? `別枠（${[...new Set(o.bk.map(r => betsuGroupOf(r.p.type).label))].join('・')}）${o.bk.length}件` : '',
       o.dup.length ? `ほかの事業に含まれる再掲 ${o.dup.length}件` : '',
       o.pend.length ? `照らし合わせ中（要確認）の ${o.pend.length}行` : '',
     ].filter(Boolean).join('・') || '対象外の事業はありません'}${o.u3.length || o.c4.length || o.ex.length || o.hold.length || o.bk.length || o.dup.length || o.pend.length ? 'は入れていません。' : '。'}`));

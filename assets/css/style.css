@@ -436,7 +436,7 @@ tr:last-child td { border-bottom: none; }
 .scope-note { margin: 8px 0 14px; font-size: .9rem; color: var(--muted); line-height: 1.65; }
 .scope-note b { color: var(--text); }
 .kpi-card .scope-note { margin: 6px 0 0; }
-/* 別枠（中国残留邦人等・引揚者などの援護）の金額。合計とは分けて小さく示す */
+/* 別枠（学校の教員の人件費、中国残留邦人等・引揚者などの援護）の金額。合計とは分けて小さく示す */
 .kpi-aside { margin: 10px 0 0; padding: 8px 12px; border-radius: 10px; background: #fff; border: 1px dashed #c9dccf; font-size: .9rem; color: var(--muted); line-height: 1.65; }
 .kpi-aside b { color: var(--text); }
 .kpi-how { margin: 12px 0 0; font-size: .92rem; }

@@ -162,6 +162,8 @@ export class Checker {
         this.add('warn', 'projects', p, '④（関連事業・参考経費）は、外国人関連の部分の金額が分からない事業なので、ふつう確認状況は「一部確認済み」です');
       if (p.relation !== '別枠' && /中国残留|中国帰国|残留邦人|引揚/.test(p.name))
         this.add('warn', 'projects', p, '中国残留邦人等・引揚者などの援護の事業は、ふつう分類を「別枠」にします（日本語・地域生活の支援も含めて、多文化共生関連予算の合計に入れない）');
+      if (p.relation !== '別枠' && /(教員|教諭).{0,8}(配置|加配|増員|人件費|給与)|加配教員|教職員.{0,4}(人件費|給与)/.test(p.name))
+        this.add('warn', 'projects', p, '学校の教員（教職員定数で置く教員）の人件費は、ふつう分類を「別枠」・類型を「別-教員」にします（自治体が事業の費用で雇う日本語指導員・支援員などは別枠にしない）');
       if (['①', '②', '③'].includes(p.relation) && !p.account)
         this.add('warn', 'projects', p, '①②③の事業の「会計」が空欄です（一般会計・特別会計・企業会計）。空欄の事業がある年度は、一般会計に占める割合を「算出不可」として出しません');
     }
@@ -305,15 +307,7 @@ export class Checker {
         this.add('warn', 'budgets', b, `${b.code} の ${b.fy}年度 ${b.stage} の調査状況の行がありません（「一部確認」として表示します）`);
       }
     }
-    for (const n of d.notes || []) {
-      if (n.from_fy && n.to_fy && n.from_fy > n.to_fy) this.add('error', 'notes', n, '対象年度（から）が（まで）より後です');
-      if (n.project_id) {
-        const p = projects.get(n.project_id);
-        if (!p) this.add('error', 'notes', n, `対象の事業ID ${n.project_id} が事業マスタにありません`);
-        else if (p.code !== n.code) this.add('error', 'notes', n, `対象の事業ID ${n.project_id} はほかの自治体の事業です`);
-        if (n.kind !== '比べるときの注意') this.add('warn', 'notes', n, '対象の事業IDは、種類が「比べるときの注意」の注記でだけ使います');
-      }
-    }
+    for (const n of d.notes || []) if (n.from_fy && n.to_fy && n.from_fy > n.to_fy) this.add('error', 'notes', n, '対象年度（から）が（まで）より後です');
     return d;
   }
 

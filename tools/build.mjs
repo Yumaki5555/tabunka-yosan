@@ -14,7 +14,7 @@ import { fileURLToPath } from 'node:url';
 import { TABLES } from '../assets/js/schema.js';
 import { csvToObjects } from '../assets/js/csv.js';
 import { Checker } from '../assets/js/validate.js';
-import { aggregate, breakdown, fieldTotals, valueOf, generalTotals, compareNotes, FUND_KEYS } from '../assets/js/calc.js';
+import { aggregate, breakdown, fieldTotals, valueOf, generalTotals, FUND_KEYS } from '../assets/js/calc.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DATA = path.join(ROOT, 'data');
@@ -54,8 +54,6 @@ const stamp = new Date(now.getTime() + 9 * 3600e3).toISOString().replace('T', ' 
 const sum = aggregate(d);
 // 一般会計の予算総額（一般会計に占める割合の分母。確認済みの行だけ）
 const gen = generalTotals(d.general);
-// 比べるときの注意（ランキング・比較でも出すので集計といっしょに書き出す）
-const cmp = compareNotes(d);
 
 // 検算：自治体×年度×段階ごとに、事業ごとの内訳（自治体のページの「この金額はどう計算した？」と同じ計算）を作り、
 // 集計と一致するか・二重計上や換算ミスの点検に通るかを確かめる。合わなければ公開用データを作らない
@@ -149,7 +147,7 @@ writeJSON(path.join(DIST, 'master.json'), {
 });
 
 // 集計（地図・ランキング・比較用）
-writeJSON(path.join(DIST, 'summary.json'), { generated: stamp, years: config.years, sum, gen, cmp });
+writeJSON(path.join(DIST, 'summary.json'), { generated: stamp, years: config.years, sum, gen });
 
 // 都道府県ごとの詳しいデータ（自治体のページ用）
 // フォルダごと消すと Dropbox の同期と重なって失敗し、フォルダが空のまま残ることがあるので、

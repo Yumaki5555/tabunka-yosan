@@ -2,7 +2,7 @@
 
 import { db } from './store.js';
 import { esc } from './util.js';
-import { FIELDS, FIELD_INFO, RELATION_INFO, SURVEY_INFO, SURVEY_LABEL, SURVEY_STATUSES } from './schema.js';
+import { FIELDS, FIELD_INFO, RELATION_INFO, SURVEY_INFO, SURVEY_LABEL, SURVEY_STATUSES, BETSU_GROUPS } from './schema.js';
 import { COLORS } from './charts.js';
 
 export function aboutPage(ctx) {
@@ -20,7 +20,8 @@ export function aboutPage(ctx) {
     <ul>${Object.values(RELATION_INFO).map(v => `<li><b>${v.no && v.no !== '保' ? v.no + ' ' : ''}${esc(v.label)}</b> … ${esc(v.desc)}<br><small>例：${esc(v.examples)}</small></li>`).join('')}</ul>
     <p>①〜⑤と別枠は、自治体の公式な予算の区分ではありません。このサイトが、資料に書かれた事業の対象と目的を読んで分けたものです。</p>
     <p><b>多文化共生関連予算の合計（基本集計）＝ ①＋②＋③のうち外国人関連部分の金額が資料で分かった分</b>です。地図・ランキング・比較の金額は、どれもこの合計です。③で部分の金額が分からない事業と④は、事業全体の金額を参考として示すだけで足しません。⑤と判定保留も足しません。</p>
-    <p id="betsuwaku"><b>中国残留邦人等・引揚者などの援護は「別枠」</b>にしています。戦争の影響を受けた人への援護（戦後処理）として国の制度にもとづいて行う事業で、外国人向けの施策とは性格がちがうためです。支援給付だけでなく、日本語教室や地域生活の支援も含めて合計には入れず、事業の金額は自治体のページで参考として別に示します（見落とさないよう、事業は登録しておきます）。</p>
+    <div id="betsuwaku"><p><b>次の2つは、どの自治体でも「別枠」</b>にしています。合計・地図・ランキング・比較には入れず、事業の金額は自治体のページで参考として別に示します。実際に使われるお金なので、事業は消さずに登録しておきます。自治体ごとに注意書きを付けるのではなく、全国で同じ決まりにそろえて比べられるようにするためです。</p>
+    <ul>${BETSU_GROUPS.map(g => `<li><b>${esc(g.label)}</b> … ${esc(g.desc)}</li>`).join('')}</ul></div>
     <p id="scope">関係する事業は広く拾いますが、基本集計に加える金額は、資料で根拠を確かめられたものに限ります。「多文化共生関連予算」と「外国人個人に支払われたお金」は別のものです。①には日本語教室や学校での日本語指導のようなサービスも入り、②は行政が外国人に対応するための経費です。事業ごとに「対象者の範囲」（外国籍の人・外国出生の人・帰化した人・外国にルーツがある人・外国語を使う人など）を記録し、日本国籍の人も対象に含まれる事業はそのことを書いています。</p>
     <p>分類の決め方の詳しい基準は、<a href="https://github.com/Yumaki5555/tabunka-yosan/blob/main/docs/%E5%88%86%E9%A1%9E%E3%81%A8%E9%9B%86%E8%A8%88%E3%81%AE%E5%9F%BA%E6%BA%96.md" target="_blank" rel="noopener">分類と集計の基準</a>にまとめています。</p>
     <h2 id="ratio">一般会計に占める割合</h2>

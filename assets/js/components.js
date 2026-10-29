@@ -163,13 +163,7 @@ export function statusLegendNote() {
 
 // 合計（基本集計）のそばに出す注記。外国籍の人だけに使う予算と受け取られないようにする（言い回しは集計基準のページとそろえる）
 export function scopeNoteHTML() {
-  return `<p class="scope-note"><b>この合計は、外国籍の人だけに使われる予算ではありません。</b>帰国児童生徒・帰化した人など日本国籍の人や、外国語を使う人も対象に含む事業が入ることがあります（対象者の範囲は事業ごとに書いています）。中国残留邦人等・引揚者などの援護は別枠で、この合計には入れていません。<a href="#/about?to=scope">くわしく見る</a></p>`;
-}
-
-// 比べるときの注意の1件を文にする（対象の事業の金額と合計が分かれば、その事業を除いた合計も添える）
-export function cmpNoteText(n, total) {
-  if (!(n.amt > 0) || !(total > 0) || n.amt > total) return n.note;
-  return `${n.note}合計のうち「${n.name}」は${yen(n.amt, { approx: true })}（${Math.round(n.amt / total * 100)}%）で、これを除くと${yen(total - n.amt, { approx: true })}です。`;
+  return `<p class="scope-note"><b>この合計は、外国籍の人だけに使われる予算ではありません。</b>帰国児童生徒・帰化した人など日本国籍の人や、外国語を使う人も対象に含む事業が入ることがあります（対象者の範囲は事業ごとに書いています）。学校の教員の人件費と、中国残留邦人等・引揚者などの援護は、どの自治体でも<a href="#/about?to=betsuwaku">別枠</a>にして、この合計には入れていません。<a href="#/about?to=scope">くわしく見る</a></p>`;
 }
 
 // 一般会計に占める割合の表示（出せないときは理由を書く。0%とは書かない）
