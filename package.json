@@ -1,0 +1,5 @@
+{
+  "private": true,
+  "type": "module",
+  "description": "全国 多文化共生予算マップ（GitHub Pages で公開する静的サイト）。node tools/build.mjs で公開用データを作ります。"
+}

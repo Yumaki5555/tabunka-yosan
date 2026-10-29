@@ -1,0 +1,18 @@
+{
+  "site_name": "全国 多文化共生予算マップ",
+  "site_url": "https://yumaki5555.github.io/tabunka-yosan/",
+  "years": [2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026],
+  "default_year": 2026,
+  "settlement_latest_fy": 2025,
+  "master_source": {
+    "title": "全国地方公共団体コード（令和6年1月1日現在）",
+    "publisher": "総務省",
+    "url": "https://www.soumu.go.jp/denshijiti/code.html",
+    "note": "北方領土の6村（色丹村・泊村・留夜別村・留別村・紗那村・蘂取村）は役場がないため対象外"
+  },
+  "links": {
+    "portal": "https://yumaki5555.github.io/",
+    "zairyu": "https://yumaki5555.github.io/zairyu/",
+    "mou_map": "https://yumaki5555.github.io/mou-map/"
+  }
+}

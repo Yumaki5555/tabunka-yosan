@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>全国 多文化共生予算マップ｜あなたの自治体は、何にいくら使っている？</title>
+<meta name="description" content="全国の都道府県・市区町村が、外国人に関係する事業（多文化共生関連予算）に何にいくら使っているのか、一般会計の何％にあたるのかを、予算書などの公式資料から調べて比較できます。未調査と0円を区別しています。">
+<link rel="canonical" href="https://yumaki5555.github.io/tabunka-yosan/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="全国 多文化共生予算マップ">
+<meta property="og:title" content="全国 多文化共生予算マップ">
+<meta property="og:description" content="あなたの自治体は、何にいくら使っている？ 多文化共生に関連する予算・決算・財源を、公式資料から調べて比較できます。">
+<meta property="og:url" content="https://yumaki5555.github.io/tabunka-yosan/">
+<meta property="og:locale" content="ja_JP">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="全国 多文化共生予算マップ">
+<meta name="twitter:description" content="あなたの自治体は、何にいくら使っている？ 多文化共生に関連する予算・決算・財源を公式資料から調べて比較できます。">
+<meta name="theme-color" content="#1d7347">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231d7347'/%3E%3Ctext x='32' y='44' font-size='32' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='700'%3E%E5%85%B1%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/css/style.css?v=202610291746">
+</head>
+<body>
+<a class="skip" href="#app">本文へ移動</a>
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a class="brand" href="#/">
+      <span class="brand-mark" aria-hidden="true">共</span>
+      <span class="brand-text">
+        <span class="brand-title">全国 多文化共生予算マップ</span>
+        <span class="brand-sub">自治体は、外国人に関係する事業にいくら使っている？</span>
+      </span>
+    </a>
+    <nav class="main-nav" aria-label="メインメニュー">
+      <a href="#/?to=find" data-nav="home"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5l5 5"/></svg><span>自治体を探す</span></a>
+      <a href="#/national" data-nav="explore"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20h18"/><path d="M6 20v-6M11 20V8M16 20v-9M21 20V5"/></svg><span>全国を見る</span></a>
+      <a href="#/guide" data-nav="guide"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6c-2.5-2-6-2-9-1v14c3-1 6.5-1 9 1 2.5-2 6-2 9-1V5c-3-1-6.5-1-9 1z"/><path d="M12 6v14"/></svg><span>3分でわかる</span></a>
+      <button type="button" id="menu-btn" aria-expanded="false" aria-controls="site-menu" data-nav="menu"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg><span>メニュー</span></button>
+    </nav>
+  </div>
+  <div class="site-menu" id="site-menu" hidden>
+    <div class="wrap menu-inner">
+      <div class="menu-grp"><p class="menu-h">調べる</p>
+        <a href="#/?to=find">自治体を探す（名前・地図・都道府県）</a>
+        <a href="#/search">事業の詳細検索</a></div>
+      <div class="menu-grp"><p class="menu-h">全国を見る</p>
+        <a href="#/national" data-keep-year>使い道（10分類）</a>
+        <a href="#/ranking" data-keep-year>ランキング</a>
+        <a href="#/compare" data-keep-year>自治体を比較</a>
+        <a href="#/trend" data-keep-year>年度別の変化</a></div>
+      <div class="menu-grp"><p class="menu-h">知る</p>
+        <a href="#/guide">3分でわかる 多文化共生予算</a>
+        <a href="#/about">調査方法・集計基準</a>
+        <a href="#/about?to=src-rule">公式資料・出典のルール</a></div>
+      <div class="menu-grp"><p class="menu-h">資料・データ</p>
+        <a href="#/status" data-keep-year>調査状況</a>
+        <a href="#/changes">更新履歴・訂正</a>
+        <a href="#/data">データのダウンロード</a></div>
+    </div>
+  </div>
+</header>
+
+<main id="app" class="wrap" tabindex="-1">
+  <p class="loading">データを読み込んでいます…</p>
+  <noscript><p class="error">このサイトは JavaScript を使って表示します。ブラウザの設定で JavaScript を有効にしてください。</p></noscript>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p id="footer-updated"></p>
+    <p>このサイトは、自治体などの公式資料で確認できた範囲の金額を整理したものです。多文化共生の政策への賛成・反対を示すものではありません。確認できていない金額を0円として扱わず、「未調査」「資料未発見」「金額非公表」と分けて表示しています。表示している合計は、このサイトで確認できた事業の合計で、その自治体の関連支出のすべてとは限りません。</p>
+    <p>地図：国土地理院「地球地図日本」（第2.1版 行政界、<a href="https://www.gsi.go.jp/kankyochiri/gm_jpn.html" target="_blank" rel="noopener">https://www.gsi.go.jp/kankyochiri/gm_jpn.html</a>）を加工して作成（国土地理院コンテンツ利用規約による）。人口：総務省「住民基本台帳に基づく人口、人口動態及び世帯数調査」、外国人住民数：出入国在留管理庁「在留外国人統計」（いずれも <a href="https://www.e-stat.go.jp/" target="_blank" rel="noopener">e-Stat</a>）を加工して作成。自治体の一覧：総務省「全国地方公共団体コード」。</p>
+    <p class="footer-links"><a href="#/about">調査方法・集計基準</a><a href="#/status">調査状況</a><a href="#/changes">更新履歴・訂正</a><a href="#/data">データのダウンロード</a></p>
+    <p class="footer-links"><a href="https://yumaki5555.github.io/" target="_blank" rel="noopener">総合入口「日本を知る。」</a><a href="https://yumaki5555.github.io/zairyu/" target="_blank" rel="noopener">数でみる在留外国人</a><a href="https://yumaki5555.github.io/mou-map/" target="_blank" rel="noopener">日本と世界のMOU・協定マップ</a></p>
+  </div>
+</footer>
+
+<button type="button" id="to-top" class="to-top" aria-label="ページの上に戻る">↑ 上に戻る</button>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<!-- version:start（tools/set_version.py が書き換えます） -->
+<script type="importmap">
+{
+ "imports": {
+  "./assets/js/app.js": "./assets/js/app.js?v=202610291746",
+  "./assets/js/calc.js": "./assets/js/calc.js?v=202610291746",
+  "./assets/js/charts.js": "./assets/js/charts.js?v=202610291746",
+  "./assets/js/components.js": "./assets/js/components.js?v=202610291746",
+  "./assets/js/csv.js": "./assets/js/csv.js?v=202610291746",
+  "./assets/js/export.js": "./assets/js/export.js?v=202610291746",
+  "./assets/js/icons.js": "./assets/js/icons.js?v=202610291746",
+  "./assets/js/map.js": "./assets/js/map.js?v=202610291746",
+  "./assets/js/page-about.js": "./assets/js/page-about.js?v=202610291746",
+  "./assets/js/page-compare.js": "./assets/js/page-compare.js?v=202610291746",
+  "./assets/js/page-data.js": "./assets/js/page-data.js?v=202610291746",
+  "./assets/js/page-guide.js": "./assets/js/page-guide.js?v=202610291746",
+  "./assets/js/page-home.js": "./assets/js/page-home.js?v=202610291746",
+  "./assets/js/page-muni.js": "./assets/js/page-muni.js?v=202610291746",
+  "./assets/js/page-national.js": "./assets/js/page-national.js?v=202610291746",
+  "./assets/js/page-ranking.js": "./assets/js/page-ranking.js?v=202610291746",
+  "./assets/js/page-search.js": "./assets/js/page-search.js?v=202610291746",
+  "./assets/js/page-status.js": "./assets/js/page-status.js?v=202610291746",
+  "./assets/js/page-trend.js": "./assets/js/page-trend.js?v=202610291746",
+  "./assets/js/schema.js": "./assets/js/schema.js?v=202610291746",
+  "./assets/js/store.js": "./assets/js/store.js?v=202610291746",
+  "./assets/js/uses.js": "./assets/js/uses.js?v=202610291746",
+  "./assets/js/util.js": "./assets/js/util.js?v=202610291746",
+  "./assets/js/validate.js": "./assets/js/validate.js?v=202610291746"
+ }
+}
+</script>
+<script type="module" src="assets/js/app.js?v=202610291746"></script>
+<!-- version:end -->
+</body>
+</html>

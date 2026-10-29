@@ -1,0 +1,8 @@
+# 公開しないもの
+.claude/
+__pycache__/
+*.tmp*
+# 照合の結果（作業用。tools/verify_pages.py が毎回作り直す）
+tools/verify_report.csv
+# 点検の結果（tools/build.mjs が毎回作り直す。公開しない）
+tools/build_report.local.json
