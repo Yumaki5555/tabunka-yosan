@@ -62,6 +62,7 @@
 | `python -I tools/verify_pages.py <フォルダ> [--render <フォルダ>]` | 金額と記載が資料の掲載ページにあるか照合し、`tools/verify_report.csv` に書く |
 | `python tools/make_master.py` | 自治体マスタ・人口・地図の形を作り直す（「数でみる在留外国人」の作業フォルダが必要） |
 | `python tools/set_version.py` | 見る人のブラウザに古いJS・CSSが残らないよう版番号を付ける |
+| `python -I tools/make_icons.py` | ファビコン（`assets/img/`。グリーンの地に白い円グラフ）を作り直す（形や色を変えるときだけ） |
 | `python tools/serve.py` | 確認用のサーバー（http://127.0.0.1:8781/ ） |
 
 ## 出典・利用の条件

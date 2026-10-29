@@ -1,6 +1,8 @@
 /* 全国 多文化共生予算マップ — 共通スタイル
-   白を基本に、グリーンを差し色にする。大きく読みやすい文字・そろった形のボタン・少ない枠線。
-   ピンクや強い赤は使わない。色はここの変数だけで調整できます。 */
+   白を基本に、グリーン（#1d7347）を差し色にする。ボタン・選択中のタブ・お知らせ枠などはグリーン系、淡いグリーンは帯や選択した所の背景。
+   青は「一部確認」の札や増えた額など、状態を見分ける所だけに使う。グラフの色（charts.js）以外の飾りの色は増やさない。
+   大きく読みやすい文字・そろった形のボタン・少ない枠線。ピンクや強い赤は使わない。色はここの変数だけで調整できます。
+   ファビコンとヘッダー左上の円グラフの絵は tools/make_icons.py の説明を参照。 */
 :root {
   color-scheme: light;
   --bg: #ffffff;
@@ -19,7 +21,6 @@
   --blue-line: #a9c6e6;
   --warn: #7a4a00;
   --warn-soft: #fff6e2;
-  --info-soft: #eef4fb;
   --danger: #a33a12;
   --danger-soft: #fbefe8;
   --focus: #f0a500;
@@ -59,7 +60,8 @@ p { margin: 0 0 1em; }
 .site-header { background: #fff; border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 30; }
 .header-inner { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 8px; padding-bottom: 8px; }
 .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text); min-width: 0; }
-.brand-mark { flex: none; width: 40px; height: 40px; border-radius: 11px; background: var(--green); color: #fff; font-weight: 700; font-size: 22px; display: grid; place-items: center; }
+.brand-mark { flex: none; width: 40px; height: 40px; border-radius: 11px; background: var(--green); display: grid; place-items: center; }
+.brand-mark svg { width: 100%; height: 100%; fill: #fff; }
 .brand-text { display: flex; flex-direction: column; min-width: 0; }
 .brand-title { font-weight: 700; font-size: 1.12rem; line-height: 1.3; }
 .brand-sub { font-size: .8rem; color: var(--muted); line-height: 1.4; }
@@ -127,7 +129,7 @@ input[type="search"] { min-height: var(--tap); }
 .crumbs a { color: var(--muted); }
 .card { border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px; background: #fff; }
 .note { background: var(--warn-soft); border-left: 5px solid #e0a43a; border-radius: 10px; padding: 12px 16px; margin: 12px 0; font-size: .97rem; }
-.info { background: var(--info-soft); border-left: 5px solid #6b93c4; border-radius: 10px; padding: 12px 16px; margin: 12px 0; font-size: .97rem; }
+.info { background: var(--green-soft); border-left: 5px solid var(--green); border-radius: 10px; padding: 12px 16px; margin: 12px 0; font-size: .97rem; }
 .error { background: var(--danger-soft); border-left: 5px solid var(--danger); border-radius: 10px; padding: 12px 16px; margin: 12px 0; }
 .note p:last-child, .info p:last-child, .error p:last-child { margin-bottom: 0; }
 .section { margin: 30px 0; }
@@ -575,7 +577,7 @@ details.uz[open] > summary { margin-bottom: 0; background: var(--soft); border-r
 .proj[open] > summary { border-bottom: 1px solid var(--line); margin: 0; background: var(--soft); border-radius: var(--radius) var(--radius) 0 0; }
 .proj-body { padding: 4px 16px 14px; }
 .proj-body h4 { margin: 14px 0 6px; font-size: 1rem; }
-.src-no { display: inline-block; font-size: .8rem; font-weight: 700; padding: 0 7px; border-radius: 6px; background: var(--blue-soft); color: var(--blue-dark); border: 1px solid var(--blue-line); white-space: nowrap; }
+.src-no { display: inline-block; font-size: .8rem; font-weight: 700; padding: 0 7px; border-radius: 6px; background: var(--green-soft); color: var(--green-dark); border: 1px solid var(--green-line); white-space: nowrap; }
 .quote { font-size: .92rem; background: var(--soft); border-radius: 8px; padding: 6px 10px; margin: 4px 0; color: #34433a; }
 .ext-links { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
 .ext-link { display: block; border-radius: 12px; padding: 12px 14px; text-decoration: none; color: var(--text); background: var(--soft); }
@@ -620,7 +622,7 @@ details.uz[open] > summary { margin-bottom: 0; background: var(--soft); border-r
 .g-split { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
 .g-split > div { border-radius: 14px; padding: 12px 14px; font-size: .97rem; line-height: 1.6; }
 .g-split .g-yes { background: var(--green-soft); }
-.g-split .g-also { background: var(--blue-soft); }
+.g-split .g-also { background: #fff; border: 1.5px solid var(--green-line); }
 .g-split b { display: block; font-size: 1.02rem; }
 .g-donut { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 20px 28px; align-items: center; }
 .g-donut-fig { position: relative; width: 180px; height: 180px; }
@@ -700,7 +702,7 @@ details.uz[open] > summary { margin-bottom: 0; background: var(--soft); border-r
   html { scroll-padding-top: 150px; }
   .header-inner { flex-direction: column; align-items: stretch; gap: 4px; padding-bottom: 4px; }
   .brand-title { font-size: 1.02rem; }
-  .brand-mark { width: 34px; height: 34px; font-size: 19px; border-radius: 9px; }
+  .brand-mark { width: 34px; height: 34px; border-radius: 9px; }
   .main-nav { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 2px; }
   .main-nav a, .main-nav button { flex-direction: column; justify-content: center; gap: 1px; padding: 4px 2px; min-height: 52px; font-size: .78rem; border-radius: 10px; }
   .main-nav svg { width: 22px; height: 22px; }
