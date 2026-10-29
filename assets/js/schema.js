@@ -158,7 +158,7 @@ export const LINK_SITES = ['mou-map', 'zairyu', 'karte', 'other'];
 
 // 公開する文章に入れない、調査の作業メモの言葉（サーバーの制限・道具の名前・資料の取り方・作業日誌・以前の区分など）。
 // データの文章の欄にあると、tools/build.mjs がエラーにして公開用データを作らない。作業メモはリポジトリの外の非公開フォルダに書く
-export const INTERNAL_WORDS = /Incapsula|curl|WebFetch|pdf\.js|scratchpad|worktree|\bOCR\b|Claude|調査担当|点検者|外部点検|外部の点検|調査票|旧区分|見直し前の|published_date|\bnull\b|自動取得|自動アクセス|全文検索|文字化け|目視|目で読|目で確|画像にして|ブラウザで(開|保存|取得|回避)|ダウンロードし|取り込み直|登録漏れ|[ABC]区分/;
+export const INTERNAL_WORDS = /Incapsula|curl|WebFetch|pdf\.js|scratchpad|worktree|\bOCR\b|Claude|調査担当|点検者|外部点検|外部の点検|調査票|旧区分|見直し前の|published_date|\bnull\b|自動取得|自動アクセス|全文検索|文字化け|目視|目で読|目で確|画像にして|ブラウザで(開|保存|取得|回避)|ダウンロードし|取り込み直|登録漏れ|\bissues\b|[ABC]区分/;
 
 // 列の型
 //   id … 決まった形の記号、code … 6桁の全国地方公共団体コード、int … 0以上の整数、
