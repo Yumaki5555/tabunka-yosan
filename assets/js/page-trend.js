@@ -4,7 +4,7 @@
 import { db, loadDetail, loadPopulation, popOf, status, cell, ratio } from './store.js';
 import { $, $$, esc, yen, yenExact, pct, num, diffYen, fyFull, ratioPct } from './util.js';
 import { href, go, currentYear, currentStage } from './app.js';
-import { muniPicker, stLabel, fieldLabel, exploreTabs } from './components.js';
+import { muniPicker, stLabel, fieldLabel, exploreTabs, scopeNoteHTML } from './components.js';
 import { ICON } from './icons.js';
 import { columnChart, COLORS } from './charts.js';
 import { COUNTED, countedAmount } from './calc.js';
@@ -51,6 +51,7 @@ export async function trendPage(ctx) {
     <div class="ctl-row"><div class="ctl"><span class="label">予算か決算か</span><div class="seg seg-sm" role="group" aria-label="予算か決算か">${['当初予算', '決算'].map(s => `<button type="button" data-stage="${s}" aria-pressed="${stage === s}">${s}</button>`).join('')}</div></div>
     <div class="ctl"><span class="label">グラフの指標</span><div class="seg seg-sm" role="group" aria-label="グラフの指標"><button type="button" data-ind="amt" aria-pressed="${ind === 'amt'}">予算額</button><button type="button" data-ind="ratio" aria-pressed="${ind === 'ratio'}">一般会計に占める割合</button></div></div></div>
     <p class="cond"><b>条件：</b>${esc(m.full)}・${stage}・多文化共生関連予算の合計（自治体のページと同じ数え方。①直接給付・支援＋②行政経費＋③一般事業のうち分かった部分）・${mode === 'two' ? `${a}年度と${b}年度` : `${range[0]}〜${range[range.length - 1]}年度`}。調査していない年度は「未調査」として比べません。</p>
+    ${scopeNoteHTML()}
     <div id="t-main"></div>`;
   $$('[data-mode]', body).forEach(x => x.addEventListener('click', () => nav({ mode: x.dataset.mode })));
   $$('[data-stage]', body).forEach(x => x.addEventListener('click', () => nav({ s: x.dataset.stage === '決算' ? '決算' : '' })));

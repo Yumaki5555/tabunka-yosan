@@ -3,7 +3,7 @@
 import { db, loadPopulation, popOf, status, cell, ratio, generalOf } from './store.js';
 import { $, $$, esc, yen, yenExact, yenPer, num, fyFull, download, ratioPct } from './util.js';
 import { href, go, currentYear, currentStage, yearPicker, bindYearPicker, stageSeg } from './app.js';
-import { muniPicker, statusBadge, stLabel, fieldLabel, exploreTabs, ratioView } from './components.js';
+import { muniPicker, statusBadge, stLabel, fieldLabel, exploreTabs, ratioView, scopeNoteHTML } from './components.js';
 import { hbarChart, stackChart, columnChart, COLORS } from './charts.js';
 import { COUNTED, fundCoverage } from './calc.js';
 import { FIELDS } from './schema.js';
@@ -69,6 +69,7 @@ export async function comparePage(ctx) {
       <p class="ck-k">一般会計に占める割合</p><p class="ck-v2">${esc(r.r.text)}</p>${r.r.sub ? `<p class="ck-s">${esc(r.r.sub)}</p>` : ''}
       <p class="ck-k">住民1人当たり</p><p class="ck-v3">${r.v !== null && r.p?.population ? esc(yenPer(r.v / r.p.population)) : '—'}</p>
     </div>`).join('')}</div>
+    ${ok.some(r => r.v > 0) ? scopeNoteHTML() : ''}
 
     <section class="section"><h2 class="sec-h">予算額</h2><div id="cc-total"></div></section>
     <section class="section"><h2 class="sec-h">一般会計に占める割合</h2><div id="cc-ratio"></div></section>

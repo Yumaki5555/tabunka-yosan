@@ -4,7 +4,7 @@
 import { db, metricOf, status, cell, loadPopulation, popOf, generalOf } from './store.js';
 import { $, $$, esc, yen, yenExact, yenPer, pct, num, fyFull, download, ratioPct } from './util.js';
 import { href, currentYear, currentStage, yearPicker, bindYearPicker, stageSeg } from './app.js';
-import { statusBadge, stLabel, exploreTabs } from './components.js';
+import { statusBadge, stLabel, exploreTabs, scopeNoteHTML } from './components.js';
 import { ICON } from './icons.js';
 import { toCSV } from './csv.js';
 
@@ -96,6 +96,7 @@ export async function rankingPage(ctx) {
         <label class="check small"><input type="checkbox" id="rk-pt" ${st.partial ? 'checked' : ''}> 一部の資料だけ調べた自治体も含める（参考）</label>
       </div>
       ${condition({ ...st, n: rows.length })}
+      ${rows.length ? scopeNoteHTML() : ''}
       <h2 class="rank-h">${esc(k.label)}${desc ? '' : main === 'up' ? '' : ''}<small>${esc(st.level === 'pref' ? '都道府県庁' : '市区町村')}・${esc(fyFull(st.fy))}・${esc(st.stage)}</small></h2>
       ${rows.length ? rankBarsHTML(rows, { kind: st.kind, fy: st.fy, stage: st.stage, limit: st.all ? 0 : LIMIT })
         : `<p class="note">この条件で比べられる自治体は、まだありません。${!st.partial ? `「一部の資料だけ調べた自治体も含める」にすると表示される場合があります。` : ''}</p>`}

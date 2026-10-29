@@ -4,7 +4,7 @@
 import { db, cell } from './store.js';
 import { $, $$, esc, yen, num, fyFull } from './util.js';
 import { href, currentYear, currentStage, yearPicker, bindYearPicker, stageSeg } from './app.js';
-import { exploreTabs } from './components.js';
+import { exploreTabs, scopeNoteHTML } from './components.js';
 import { ICON } from './icons.js';
 import { fieldTotals } from './calc.js';
 import { renderUses, coverageHTML, overlapHTML, nationalItems } from './uses.js';
@@ -37,6 +37,7 @@ export function nationalPage(ctx) {
         <div class="kpi-mini"><span class="k">金額を確かめた自治体</span><b>${num(ft.n)}</b><small>${esc(USE_SCOPES[st.us])}</small></div>
         <div class="kpi-mini"><span class="k">金額を確かめた事業</span><b>${num(ft.an)}</b><small>公式資料の該当ページで確認</small></div>
       </div>
+      ${ft.total ? scopeNoteHTML() : ''}
       <section class="section" aria-labelledby="nu-h"><h2 id="nu-h" class="visually-hidden">使い道の円グラフ</h2><div id="nu-box"></div></section>
       <details class="more-box"><summary>集計の範囲と注意（どこまで調べた？）</summary><div id="nu-cov"></div></details>
       <p class="next-links"><a href="${href('/ranking', { y: st.fy })}">${ICON.bars}ランキングで比べる</a><a href="${href('/find', { y: st.fy })}">${ICON.map}地図で見る</a></p>`;

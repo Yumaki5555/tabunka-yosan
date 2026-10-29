@@ -432,6 +432,10 @@ tr:last-child td { border-bottom: none; }
 .kpi-base { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; margin: 0; font-size: .92rem; color: var(--muted); }
 .kpi-base b { color: var(--text); font-size: 1rem; font-variant-numeric: tabular-nums; }
 .kpi-base a { font-size: .85rem; }
+/* 合計のそばの注記（外国籍の人だけに使う予算ではない）。自治体のページ・全国の使い道・ランキング・比較・年度別の変化で同じ文を出す */
+.scope-note { margin: 8px 0 14px; font-size: .9rem; color: var(--muted); line-height: 1.65; }
+.scope-note b { color: var(--text); }
+.kpi-card .scope-note { margin: 6px 0 0; }
 .kpi-how { margin: 12px 0 0; font-size: .92rem; }
 .kpi-how a { font-weight: 700; }
 .tc-text { font-size: 1.5rem; color: var(--text); }

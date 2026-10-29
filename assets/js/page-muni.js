@@ -7,7 +7,7 @@
 import { db, loadDetail, loadPopulation, popOf, status, cell, munisOfPref, ratio, generalOf } from './store.js';
 import { $, $$, esc, yen, yenExact, yenPer, pct, num, diffYen, fyFull, fmtDate, download, copyText, toast, ratioPct, yenShort } from './util.js';
 import { href, currentYear, currentStage, yearPicker, bindYearPicker } from './app.js';
-import { statusBadge, stLabel, relBadge, relName, fieldBadge, fieldLabel, sourceLink, sourceMeta, amountOrStatus, ratioView } from './components.js';
+import { statusBadge, stLabel, relBadge, relName, fieldBadge, fieldLabel, sourceLink, sourceMeta, amountOrStatus, ratioView, scopeNoteHTML } from './components.js';
 import { columnChart, lineChart, stackChart, COLORS } from './charts.js';
 import { FUND_KEYS, FUND_LABELS, COUNTED, breakdown, fieldTotals, valueOf } from './calc.js';
 import { renderUses, coverageHTML, singleCoverageHTML, overlapHTML, breakdownItems } from './uses.js';
@@ -107,6 +107,7 @@ export async function muniPage(ctx, code) {
     <h2 id="kpi-h" class="kpi-k">多文化共生関連予算<small>（公式資料で確認できた分）</small></h2>
     <p class="kpi-v">${headValue}</p>
     ${headSub ? `<p class="kpi-sub">${headSub}</p>` : ''}
+    ${total > 0 ? scopeNoteHTML() : ''}
     <div class="kpi-ratio">
       <p class="kpi-k2">一般会計に占める割合</p>
       <p class="kpi-v2${rv.v === null ? ' is-na' : ''}">${esc(rv.text)}</p>
