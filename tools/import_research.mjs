@@ -46,7 +46,8 @@ export function recipientType(name) {
   if (/国際交流協会|国際センター|国際交流財団/.test(s)) return '国際交流協会';
   if (/市町村|[市区町村]（|^\S+[市町村]$/.test(s)) return '市区町村';
   if (/都道府県|県$/.test(s)) return '都道府県';
-  if (/特非|NPO|ＮＰＯ|自治会|団体|保護者|ＩＡＰＥ/.test(s)) return 'NPO・市民団体';
+  if (/特非|NPO|ＮＰＯ|自治会|団体|ＩＡＰＥ/.test(s)) return 'NPO・市民団体';
+  if (/保護者|申請者|避難民|^個人$|^中国残留邦人等$/.test(s)) return '個人・世帯';
   if (/学校法人|外国人学校|学校.*設置者/.test(s)) return '学校法人';
   if (/株式会社|企業|事業者|法人|施設|医療機関/.test(s)) return '民間企業';
   return 'その他';
