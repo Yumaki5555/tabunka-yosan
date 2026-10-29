@@ -4,6 +4,7 @@
 // ・基本集計（多文化共生関連予算）＝ ①外国人等への直接給付・支援 ＋ ②外国人対応の行政経費 ＋ ③一般事業のうち外国人関連部分の金額が資料で分かった分
 //   ①と②は別々にも数える（d1・d2）。③は「うち外国人関連」の金額だけを足す（事業全体の金額は足さない）
 // ・③で部分の金額が分からない事業・④関連事業・参考経費は、事業全体の金額を参考として別に数える（足さない）。⑤対象外と判定保留も足さない
+// ・別枠（中国残留邦人等・引揚者などの援護）も足さず、事業の金額を参考として別に数える（bn・bw）
 // ・予算（当初・補正後）と決算は足さない（段階ごとに別の数）
 // ・都道府県と市区町村の合計は足さない（県から市町村への補助が二重に数えられるおそれがあるため）
 
@@ -41,7 +42,8 @@ export function aggregate(d) {
     out[code] ??= {};
     out[code][fy] ??= {};
     // g：基本集計のうち一般会計の事業の金額（一般会計に占める割合の分子）、sx・sxn：特別会計・企業会計の事業の金額と数（分子に入れない）、gx：会計が記録されていない事業の数
-    return (out[code][fy][stage] ??= { st: null, a: 0, an: 0, d1: 0, n1: 0, d2: 0, n2: 0, d3: 0, n3: 0, u3n: 0, u3w: 0, c4n: 0, c4w: 0, n5: 0, hn: 0, hw: 0, rn: 0, rw: 0, pend: 0, apend: 0, f: {}, fn: {}, fd: null, tr: 0, rc: {}, g: 0, sx: 0, sxn: 0, gx: 0 });
+    // bn・bw：別枠の事業の数と金額（合計に入れない）
+    return (out[code][fy][stage] ??= { st: null, a: 0, an: 0, d1: 0, n1: 0, d2: 0, n2: 0, d3: 0, n3: 0, u3n: 0, u3w: 0, c4n: 0, c4w: 0, n5: 0, hn: 0, hw: 0, rn: 0, rw: 0, bn: 0, bw: 0, pend: 0, apend: 0, f: {}, fn: {}, fd: null, tr: 0, rc: {}, g: 0, sx: 0, sxn: 0, gx: 0 });
   };
   for (const b of d.budgets) {
     const p = projects.get(b.project_id);
@@ -75,6 +77,7 @@ export function aggregate(d) {
     else if (p.relation === '③') { c.u3n++; c.u3w += b.amount_yen; }
     else if (p.relation === '④') { c.c4n++; c.c4w += b.amount_yen; }
     else if (p.relation === '⑤') c.n5++;
+    else if (p.relation === '別枠') { c.bn++; c.bw += b.amount_yen; }
     else { c.hn++; c.hw += b.amount_yen; }
   }
   for (const s of d.survey) cell(s.code, s.fy, s.stage).st = s.status;
@@ -93,6 +96,7 @@ export function aggregate(d) {
     if (!c.tr) delete c.tr;
     if (!c.sx) { delete c.sx; delete c.sxn; }
     if (!c.gx) delete c.gx;
+    if (!c.bn) { delete c.bn; delete c.bw; }
   }
   return out;
 }
@@ -237,7 +241,7 @@ export function fundCoverage(c) {
 // 1つの自治体・年度・段階の合計を、事業ごとに分けて示す（自治体のページの「この金額はどう計算した？」と、build の検算に使う）。
 // d は projects・budgets・funds・recipients・sources を持つデータ（全国分でも都道府県分でもよい）。
 // expected に集計（aggregate）の結果を渡すと、事業ごとの金額の足し算が集計と一致するかも確かめる。
-// inc：基本集計に入れた行（k＝分類、amt＝数えた金額）。u3：③で部分の金額が分からない行。c4：④。ex：⑤。hold：判定保留。dup：ほかの事業に含まれる再掲。
+// inc：基本集計に入れた行（k＝分類、amt＝数えた金額）。u3：③で部分の金額が分からない行。c4：④。ex：⑤。hold：判定保留。bk：別枠（wb＝その金額）。dup：ほかの事業に含まれる再掲。
 export function breakdown(d, code, fy, stage, expected) {
   const byId = new Map(d.projects.filter(p => p.code === code).map(p => [p.project_id, p]));
   const src = new Map(d.sources.map(s => [s.source_id, s]));
@@ -247,7 +251,7 @@ export function breakdown(d, code, fy, stage, expected) {
     if (!recBy.has(r.project_id)) recBy.set(r.project_id, []);
     recBy.get(r.project_id).push(r);
   }
-  const o = { inc: [], u3: [], c4: [], ex: [], hold: [], dup: [], pend: [], noRow: [], noAmt: [], total: 0, t1: 0, t2: 0, t3: 0, w3: 0, w4: 0, wh: 0, wd: 0 };
+  const o = { inc: [], u3: [], c4: [], ex: [], hold: [], bk: [], dup: [], pend: [], noRow: [], noAmt: [], total: 0, t1: 0, t2: 0, t3: 0, w3: 0, w4: 0, wh: 0, wb: 0, wd: 0 };
   const seen = new Map();
   const dupIds = new Set();
   for (const b of d.budgets) {
@@ -268,12 +272,13 @@ export function breakdown(d, code, fy, stage, expected) {
     else if (p.relation === '③') { o.u3.push({ p, b, s }); o.w3 += b.amount_yen; }
     else if (p.relation === '④') { o.c4.push({ p, b, s }); o.w4 += b.amount_yen; }
     else if (p.relation === '⑤') o.ex.push({ p, b, s });
+    else if (p.relation === '別枠') { o.bk.push({ p, b, s }); o.wb += b.amount_yen; }
     else { o.hold.push({ p, b, s }); o.wh += b.amount_yen; }
   }
   // 記録のない事業：どの年度にも金額の記録がない事業（事業があることだけ分かっている）は、③④⑤・保留ならそれぞれの一覧に、
   // ①②なら「金額の記録がない事業」に入れる。ほかの年度・段階にだけ記録がある事業は「この年度・段階の記録なし」に入れる
   const hasAny = new Set(d.budgets.filter(b => b.code === code).map(b => b.project_id));
-  const listOf = { '③': o.u3, '④': o.c4, '⑤': o.ex, '保留': o.hold };
+  const listOf = { '③': o.u3, '④': o.c4, '⑤': o.ex, '別枠': o.bk, '保留': o.hold };
   for (const p of byId.values()) {
     if (seen.has(p.project_id)) continue;
     const r = { p, b: null, s: null };
@@ -282,7 +287,7 @@ export function breakdown(d, code, fy, stage, expected) {
     else (listOf[p.relation] || o.noAmt).push(r);
   }
   const amtOf = x => x.b?.amount_yen ?? -1;
-  for (const k of ['u3', 'c4', 'ex', 'hold', 'dup', 'pend', 'noRow', 'noAmt']) o[k].sort((x, y) => amtOf(y) - amtOf(x));
+  for (const k of ['u3', 'c4', 'ex', 'hold', 'bk', 'dup', 'pend', 'noRow', 'noAmt']) o[k].sort((x, y) => amtOf(y) - amtOf(x));
   o.inc.sort((x, y) => y.amt - x.amt);
 
   // 使い道（分野）。1つの事業は1つの分野だけに入れる
@@ -361,9 +366,10 @@ export function breakdown(d, code, fy, stage, expected) {
       o.c4.length ? `④関連事業・参考経費 ${o.c4.length}件` : '',
       o.ex.length ? `⑤対象外 ${o.ex.length}件` : '',
       o.hold.length ? `判定保留 ${o.hold.length}件` : '',
+      o.bk.length ? `別枠（中国残留邦人等・引揚者などの援護）${o.bk.length}件` : '',
       o.dup.length ? `ほかの事業に含まれる再掲 ${o.dup.length}件` : '',
       o.pend.length ? `照らし合わせ中（要確認）の ${o.pend.length}行` : '',
-    ].filter(Boolean).join('・') || '対象外の事業はありません'}${o.u3.length || o.c4.length || o.ex.length || o.hold.length || o.dup.length || o.pend.length ? 'は入れていません。' : '。'}`));
+    ].filter(Boolean).join('・') || '対象外の事業はありません'}${o.u3.length || o.c4.length || o.ex.length || o.hold.length || o.bk.length || o.dup.length || o.pend.length ? 'は入れていません。' : '。'}`));
   o.checks = checks;
   o.ok = checks.every(c => c.ok);
   return o;

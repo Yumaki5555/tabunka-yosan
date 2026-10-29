@@ -45,7 +45,7 @@ function check(input, latest = 2025) {
   ck.crossCheck(d, { settlementLatestFy: latest });
   return { ck, d };
 }
-const TY = { '①': '1-日本語', '②': '2-相談', '③': '2-情報', '④': '4-協会運営', '⑤': '5-国際', '保留': '保留' };
+const TY = { '①': '1-日本語', '②': '2-相談', '③': '2-情報', '④': '4-協会運営', '⑤': '5-国際', '別枠': '別-援護', '保留': '保留' };
 const P = (id, rel = '①', field = '日本語教育', type) => ({ project_id: id, code: id.slice(0, 6), name: '事業' + id, field, relation: rel, type: type || TY[rel], target: '外国籍の住民・滞在者', check_status: rel === '保留' ? '要確認' : '確認済み', classified_date: '2026-10-29' });
 const S = { source_id: '221309-S01', code: '221309', fy: 2026, doc_type: '予算の概要', title: '資料', url: 'https://example.lg.jp/a.pdf', accessed_date: '2026-10-28' };
 const B = (id, fy, stage, yen, raw, unit = '千円', extra = {}) => ({ project_id: id, code: id.slice(0, 6), fy, stage, amount_yen: yen, amount_raw: raw, unit_raw: unit, source_id: '221309-S01', page: '1', verified: '確認済み', checked_date: '2026-10-28', ...extra });
@@ -112,6 +112,23 @@ const has = (ck, level, re) => ck.issues.some(i => i.level === level && re.test(
 {
   const { ck } = check({ projects: [{ ...P('221309-001'), note: '外部点検の指摘で追加', content: '翻訳ツールとAI通訳機を窓口に置く' }] });
   t('作業日誌は止め、事業の中身の言葉（翻訳ツール・AI）は止めない', has(ck, 'error', /外部点検/) && !has(ck, 'error', /「(翻訳ツール|AI)」/));
+}
+{
+  const { ck } = check({ projects: [{ ...P('221309-001'), name: '中国残留邦人等地域生活支援事業' }, { ...P('221309-002', '別枠'), name: '中国残留邦人等支援給付費' }] });
+  t('中国残留邦人等の事業が別枠でなければ知らせる', has(ck, 'warn', /221309-001|ふつう分類を「別枠」/) && ck.issues.filter(i => /ふつう分類を「別枠」/.test(i.msg)).length === 1);
+}
+{
+  // 別枠（中国残留邦人等・引揚者などの援護）は合計に入れず、金額を参考として別に数える。親の事業に含まれる内訳は再掲として二重に数えない
+  const { d } = check({
+    projects: [P('221309-001'), P('221309-002', '別枠', 'その他'), { ...P('221309-003', '別枠', '日本語教育', '別-生活支援'), included_in: '221309-002' }, P('221309-004', '別枠', 'その他')],
+    sources: [S],
+    budgets: [B('221309-001', 2026, '当初予算', 1000000, '1,000'), B('221309-002', 2026, '当初予算', 5000000, '5,000', '千円', { page: '2' }), B('221309-003', 2026, '当初予算', 300000, '300', '千円', { page: '3' })],
+    survey: [{ code: '221309', fy: 2026, stage: '当初予算', status: '確認済み', checked_date: '2026-10-28' }],
+  }, 2026);
+  const c = aggregate(d)['221309'][2026]['当初予算'];
+  const bd = breakdown(d, '221309', 2026, '当初予算', c.a);
+  t('別枠は合計に入れず、金額を別に数える', c.a === 1000000 && c.an === 1 && c.bn === 1 && c.bw === 5000000 && c.hn === 0 && c.rn === 1 && c.rw === 300000);
+  t('内訳：別枠は判定保留と分けて示す（金額の記録がない別枠の事業も）', bd.bk.length === 2 && bd.wb === 5000000 && bd.hold.length === 0 && bd.dup.length === 1 && bd.noAmt.length === 0 && bd.ok);
 }
 
 // ---------- 集計 ----------

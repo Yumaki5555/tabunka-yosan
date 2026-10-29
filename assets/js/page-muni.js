@@ -72,6 +72,9 @@ export async function muniPage(ctx, code) {
   const usQ = () => useScope === 'self' ? '' : useScope;
   const nRef = bd.u3.length + bd.c4.length + bd.hold.length;
   const mainProjects = D.projects.filter(x => ['①', '②', '③'].includes(x.relation));
+  // 別枠（中国残留邦人等・引揚者などの援護）は合計に入れず、金額を参考として別に示す
+  const bkProjects = D.projects.filter(x => x.relation === '別枠');
+  const bkLine = bkProjects.length ? `<p class="kpi-aside"><b>別枠（合計に入れていない）</b>：中国残留邦人等・引揚者などの援護 ${bd.wb > 0 ? `<b>${esc(yen(bd.wb, { approx: true }))}</b>（${bd.bk.filter(r => r.b).length}事業・${esc(yenExact(bd.wb))}）` : `${bkProjects.length}事業（${esc(when)}の金額の記録なし）`} <a href="${href('/m/' + code, { y: fy, s: sQ(stage), to: 'd-bk' })}" id="bk-link">くわしく</a></p>` : '';
 
   // ① いくら使う？（調べていない・資料がないときは、金額の代わりに状況を書く。0円とは書かない）
   let headValue, headSub = '';
@@ -110,13 +113,14 @@ export async function muniPage(ctx, code) {
     <p class="kpi-v">${headValue}</p>
     ${headSub ? `<p class="kpi-sub">${headSub}</p>` : ''}
     ${total > 0 ? scopeNoteHTML() : ''}
+    ${bkLine}
     <div class="kpi-ratio">
       <p class="kpi-k2">一般会計に占める割合</p>
       <p class="kpi-v2${rv.v === null ? ' is-na' : ''}">${esc(rv.text)}</p>
       ${rv.sub ? `<p class="kpi-sub2">${esc(rv.sub)}</p>` : ''}
     </div>
     <p class="kpi-base"><span>一般会計の${stage === '決算' ? '決算額' : '予算総額'}</span><b>${genTotal ? esc(yenShort(genTotal)) : '未確認'}</b>${genSrc ? `<a href="${esc(genSrc.archived_url || genSrc.url)}" target="_blank" rel="noopener">出典</a>` : ''}</p>
-    ${!checking && (bd.inc.length || bd.pend.length || nRef || bd.ex.length) ? `<p class="kpi-how"><a href="${href('/m/' + code, { y: fy, s: sQ(stage), to: 'method' })}" id="calc-link">この金額はどう計算した？</a></p>` : ''}
+    ${!checking && (bd.inc.length || bd.pend.length || nRef || bd.ex.length || bd.bk.length) ? `<p class="kpi-how"><a href="${href('/m/' + code, { y: fy, s: sQ(stage), to: 'method' })}" id="calc-link">この金額はどう計算した？</a></p>` : ''}
   </section>
 
   <section class="section" id="uses" aria-labelledby="use-h"><h2 id="use-h" class="sec-h">${stage === '決算' ? '何に使った？' : '何に使う？'}<small>使い道（10分類）</small></h2>
@@ -136,6 +140,7 @@ export async function muniPage(ctx, code) {
     <details class="dd" id="d-per"><summary>${ICON.people}<span>人口当たりの金額</span></summary><div id="per-box"></div></details>
     <details class="dd" id="d-fund"><summary>${ICON.yen}<span>財源（お金の出どころ）</span></summary><div id="fund-box"></div></details>
     <details class="dd" id="d-ref"><summary>${ICON.doc}<span>合計に入れていない関連事業</span><small>${nRef + bd.ex.length ? `${nRef + bd.ex.length}件` : ''}</small></summary><div id="ref-box"></div></details>
+    ${bkProjects.length ? `<details class="dd" id="d-bk"><summary>${ICON.doc}<span>別枠：中国残留邦人等・引揚者などの援護</span><small>${bkProjects.length}件</small></summary><div id="bk-box"></div></details>` : ''}
     <details class="dd" id="d-check"><summary>${ICON.check}<span>どこまで調べた？（調査状況）</span></summary>${checklistHTML()}<h3>年度ごとの調査状況</h3><div id="survey-box"></div></details>
     <details class="dd" id="method"><summary>${ICON.ruler}<span>集計方法（この金額はどう計算した？）</span></summary><div id="method-box"></div></details>
     ${m.isPref ? `<details class="dd" id="d-munis"><summary>${ICON.city}<span>${esc(m.name)}の市区町村</span></summary><div id="pref-munis"></div></details>` : ''}
@@ -184,10 +189,16 @@ export async function muniPage(ctx, code) {
     d.scrollIntoView({ block: 'start', behavior: 'smooth' });
   });
   if (params.get('calc') === '1') $('#method').open = true;
+  $('#bk-link')?.addEventListener('click', ev => {
+    ev.preventDefault();
+    const d = $('#d-bk'); d.open = true;
+    history.replaceState(null, '', href('/m/' + code, { y: fy, s: sQ(stage), us: usQ(), to: 'd-bk' }));
+    d.scrollIntoView({ block: 'start', behavior: 'smooth' });
+  });
 
   // ---------- 確認の状況（「金額を確かめた」と「すべて調べ終えた」を分けて書く） ----------
   function checklistHTML() {
-    if (!bd.inc.length && !bd.pend.length && !nRef && !bd.ex.length) return '';
+    if (!bd.inc.length && !bd.pend.length && !nRef && !bd.ex.length && !bd.bk.length) return '';
     const n3 = bd.inc.filter(r => r.k === '③').length;
     const items = [];
     items.push(['ok', '予算額', `合計に入れた${bd.inc.length}事業の金額は、すべて資料の該当ページで確認しました。${bd.pend.length ? `確認している途中の${bd.pend.length}件は合計に入れていません。` : ''}`]);
@@ -210,6 +221,7 @@ export async function muniPage(ctx, code) {
       ...bd.c4.map(r => [r, `関連事業・参考経費：${esc(r.p.relation_reason || R['④'].desc)}${r.b ? `（事業全体 ${esc(yenExact(r.b.amount_yen))}）` : '（金額の記録なし）'}`]),
       ...bd.hold.map(r => [r, `判定保留：${esc(r.p.relation_reason || R['保留'].desc)}${r.b ? `（事業全体 ${esc(yenExact(r.b.amount_yen))}）` : '（金額の記録なし）'}`]),
       ...bd.ex.map(r => [r, `対象外：${esc(r.p.relation_reason || R['⑤'].desc)}${r.b ? `（事業全体 ${esc(yenExact(r.b.amount_yen))}）` : ''}`]),
+      ...bd.bk.map(r => [r, `別枠（中国残留邦人等・引揚者などの援護）：外国人向けの施策と性格がちがうため、合計に入れず、金額を参考として別に示しています${r.b ? `（${esc(yenExact(r.b.amount_yen))}）` : '（金額の記録なし）'}。`]),
       ...bd.dup.map(r => [r, `金額が「${esc(r.host?.name || r.p.included_in)}」の金額にも含まれる（再掲）ため、二重に数えないよう足していません${r.b ? `（${esc(yenExact(r.b.amount_yen))}）` : ''}。`]),
       ...bd.noAmt.map(r => [r, `事業があることは分かっていますが、金額の記録がありません。`]),
       ...bd.pend.map(r => [r, `金額を資料で確認している途中のため（${esc(yenExact(r.b.amount_yen))}）。`]),
@@ -299,14 +311,16 @@ export async function muniPage(ctx, code) {
       ? { main: yen(b.portion_yen), sub: `外国人関連の部分だけ合計に（事業全体 ${yen(b.amount_yen)}）` } : { main: '関連部分は不明', sub: `事業全体 ${yen(b.amount_yen)}（足していない）` };
     if (pj.relation === '⑤') return { main: yen(b.amount_yen), sub: '対象外（合計に入れていない）' };
     if (pj.relation === '保留') return { main: yen(b.amount_yen), sub: '判定保留（合計に入れていない）' };
+    if (pj.relation === '別枠') return { main: yen(b.amount_yen), sub: '別枠（合計に入れていない）' };
     return { main: yen(b.amount_yen), sub: '参考（合計に入れていない）' };
   };
   const byAmt = list => [...list].sort((a, b) => (budBy.get(`${b.project_id}|${fy}|${stage}`)?.amount_yen ?? -1) - (budBy.get(`${a.project_id}|${fy}|${stage}`)?.amount_yen ?? -1));
-  const refProjects = D.projects.filter(x => !['①', '②', '③'].includes(x.relation));
+  const refProjects = D.projects.filter(x => !['①', '②', '③', '別枠'].includes(x.relation));
   if (!D.projects.length) pbox.innerHTML = `<p class="info">登録された事業はまだありません（${esc(stLabel(status(code, fy, '当初予算')))}）。</p>`;
   else {
     pbox.innerHTML = `${mainProjects.length ? `<h3 class="grp-h">外国人に関係する事業（${mainProjects.length}件）</h3><div class="proj-list">${byAmt(mainProjects).map(pj => projHTML(pj, amtLine(pj, fy, stage))).join('')}</div>` : ''}
-      ${refProjects.length ? `<details class="grp"${refProjects.some(x => x.project_id === openPj) ? ' open' : ''}><summary>参考：合計に入れていない関連事業・対象外（${refProjects.length}件）</summary><p class="small muted">国際交流協会の運営補助・姉妹都市交流など、外国人住民などへの支出として金額を特定できない事業や、対象外と判断した事業です。</p><div class="proj-list">${byAmt(refProjects).map(pj => projHTML(pj, amtLine(pj, fy, stage))).join('')}</div></details>` : ''}`;
+      ${refProjects.length ? `<details class="grp"${refProjects.some(x => x.project_id === openPj) ? ' open' : ''}><summary>参考：合計に入れていない関連事業・対象外（${refProjects.length}件）</summary><p class="small muted">国際交流協会の運営補助・姉妹都市交流など、外国人住民などへの支出として金額を特定できない事業や、対象外と判断した事業です。</p><div class="proj-list">${byAmt(refProjects).map(pj => projHTML(pj, amtLine(pj, fy, stage))).join('')}</div></details>` : ''}
+      ${bkProjects.length ? `<details class="grp"${bkProjects.some(x => x.project_id === openPj) ? ' open' : ''}><summary>別枠：中国残留邦人等・引揚者などの援護（${bkProjects.length}件・合計に入れていない）</summary><p class="small muted">${esc(R['別枠'].desc)}</p><div class="proj-list">${byAmt(bkProjects).map(pj => projHTML(pj, amtLine(pj, fy, stage))).join('')}</div></details>` : ''}`;
   }
   function projHTML(pj, a) {
     const bs = D.budgets.filter(b => b.project_id === pj.project_id).sort((x, y) => y.fy - x.fy || x.stage.localeCompare(y.stage));
@@ -352,6 +366,21 @@ export async function muniPage(ctx, code) {
       <ul class="mini-list">${rows.map(([r, k]) => `<li><span>${esc(r.p.name)}<small>${esc(k)}。${esc(r.p.relation_reason || '')}</small></span><span class="ml-amt"><small>${r.b ? `事業全体 ${esc(yen(r.b.amount_yen))}` : '金額の記録なし'}</small></span></li>`).join('')}</ul>
       <details><summary>どんな事業？</summary>${['③', '④', '⑤', '保留'].map(k => `<p><b>${esc(relName(k))}</b>：${esc(R[k].desc)}<br><small>例：${esc(R[k].examples)}</small></p>`).join('')}</details>`
       : `<p class="info">${esc(when)}には、合計に入れていない関連事業は登録されていません。</p>`;
+  });
+
+  // ---------- 別枠（中国残留邦人等・引揚者などの援護。合計に入れず、金額を参考として別に示す） ----------
+  lazy('d-bk', () => {
+    const line = pj => {
+      const b = budBy.get(`${pj.project_id}|${fy}|${stage}`);
+      if (!b) return '記録なし';
+      if (b.verified === '要確認') return `${yen(b.amount_yen)}（確認中）`;
+      if (pj.included_in) return `${yen(b.amount_yen)}（「${D.projects.find(x => x.project_id === pj.included_in)?.name || pj.included_in}」に含まれるので二重に数えない）`;
+      return yen(b.amount_yen);
+    };
+    $('#bk-box').innerHTML = `<p class="small">${esc(R['別枠'].desc)}</p>
+      <ul class="mini-list">${byAmt(bkProjects).map(pj => `<li><span><a href="${href('/m/' + code, { y: fy, s: sQ(stage), pj: pj.project_id })}">${esc(pj.name)}</a><small>${esc(TYPE_INFO[pj.type]?.label || '')}</small></span><span class="ml-amt"><small>${esc(line(pj))}</small></span></li>`).join('')}</ul>
+      ${bd.wb > 0 ? `<div class="calc-total"><span>別枠の合計（${esc(when)}・${bd.bk.filter(r => r.b).length}事業）</span><b>${esc(yenExact(bd.wb))}</b></div>` : `<p class="info">${esc(when)}の金額の記録はありません。</p>`}
+      <p class="small muted">この金額は、多文化共生関連予算の合計・地図・ランキング・比較には入れていません。</p>`;
   });
 
   // ---------- 年度別の推移（予算額と一般会計に占める割合を切り替え） ----------

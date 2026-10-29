@@ -13,7 +13,7 @@ export const stLabel = st => SURVEY_LABEL[st] || st;
 export function statusBadge(st, { big = false } = {}) {
   return `<span class="st ${ST_CLASS[st] || 'st-none'}${big ? ' st-big' : ''}" title="${esc(SURVEY_INFO[st] || '')}">${esc(stLabel(st))}</span>`;
 }
-const REL_CLASS = { '①': '1', '②': '2', '③': '3', '④': '4', '⑤': '5', '保留': 'h' };
+const REL_CLASS = { '①': '1', '②': '2', '③': '3', '④': '4', '⑤': '5', '別枠': 'b', '保留': 'h' };
 export const relBadge = r => `<span class="badge rel rel-${REL_CLASS[r] || 'h'}">${esc(RELATION_INFO[r]?.no === '保' ? '' : RELATION_INFO[r]?.no || '')}${esc(RELATION_INFO[r]?.short || r)}</span>`;
 export const relName = r => `${RELATION_INFO[r]?.no === '保' ? '' : RELATION_INFO[r]?.no || ''}${RELATION_INFO[r]?.label || r}`;
 export const fieldLabel = f => FIELD_INFO[f]?.label || f;
@@ -163,7 +163,7 @@ export function statusLegendNote() {
 
 // 合計（基本集計）のそばに出す注記。外国籍の人だけに使う予算と受け取られないようにする（言い回しは集計基準のページとそろえる）
 export function scopeNoteHTML() {
-  return `<p class="scope-note"><b>この合計は、外国籍の人だけに使われる予算ではありません。</b>帰国児童生徒・中国帰国者など日本国籍の人や、外国語を使う人も対象に含む事業が入ることがあります（対象者の範囲は事業ごとに書いています）。<a href="#/about?to=scope">くわしく見る</a></p>`;
+  return `<p class="scope-note"><b>この合計は、外国籍の人だけに使われる予算ではありません。</b>帰国児童生徒・帰化した人など日本国籍の人や、外国語を使う人も対象に含む事業が入ることがあります（対象者の範囲は事業ごとに書いています）。中国残留邦人等・引揚者などの援護は別枠で、この合計には入れていません。<a href="#/about?to=scope">くわしく見る</a></p>`;
 }
 
 // 比べるときの注意の1件を文にする（対象の事業の金額と合計が分かれば、その事業を除いた合計も添える）

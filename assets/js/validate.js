@@ -160,6 +160,8 @@ export class Checker {
         this.add('error', 'projects', p, '判定保留の事業は確認状況を「要確認」に、「要確認」の事業は分類を「保留」にしてください');
       if (p.relation === '④' && p.check_status === '確認済み')
         this.add('warn', 'projects', p, '④（関連事業・参考経費）は、外国人関連の部分の金額が分からない事業なので、ふつう確認状況は「一部確認済み」です');
+      if (p.relation !== '別枠' && /中国残留|中国帰国|残留邦人|引揚/.test(p.name))
+        this.add('warn', 'projects', p, '中国残留邦人等・引揚者などの援護の事業は、ふつう分類を「別枠」にします（日本語・地域生活の支援も含めて、多文化共生関連予算の合計に入れない）');
       if (['①', '②', '③'].includes(p.relation) && !p.account)
         this.add('warn', 'projects', p, '①②③の事業の「会計」が空欄です（一般会計・特別会計・企業会計）。空欄の事業がある年度は、一般会計に占める割合を「算出不可」として出しません');
     }

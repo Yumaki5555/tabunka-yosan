@@ -82,6 +82,7 @@ for (const [code, ys] of Object.entries(sum)) for (const [fy, sts] of Object.ent
   if (c.c4n !== bd.c4.filter(r => r.b).length || c.c4w !== bd.w4) bad.push(`④の事業（集計 ${c.c4n}件・内訳 ${bd.c4.filter(r => r.b).length}件）`);
   if (c.rn !== bd.dup.filter(r => r.b).length || c.rw !== bd.wd) bad.push(`再掲の事業（集計 ${c.rn}件・内訳 ${bd.dup.filter(r => r.b).length}件）`);
   if (c.hn !== bd.hold.filter(r => r.b).length) bad.push(`判定保留の事業（集計 ${c.hn}件・内訳 ${bd.hold.filter(r => r.b).length}件）`);
+  if ((c.bn || 0) !== bd.bk.filter(r => r.b).length || (c.bw || 0) !== bd.wb) bad.push(`別枠の事業（集計 ${c.bn || 0}件・内訳 ${bd.bk.filter(r => r.b).length}件）`);
   for (const g of bd.fields) if ((c.f[g.field] || 0) !== g.amount || (c.fn[g.field] || 0) !== g.list.length) bad.push(`分野「${g.field}」の金額・事業の数`);
   if (Object.keys(c.f).some(f => !bd.fields.some(g => g.field === f))) bad.push('内訳にない分野の金額が集計にある');
   if ((c.xn || 0) !== bd.noAmt.length + bd.u3.filter(r => !r.b).length) bad.push(`金額の記録がない①②③の事業（集計 ${c.xn || 0}件・内訳 ${bd.noAmt.length + bd.u3.filter(r => !r.b).length}件）`);

@@ -169,7 +169,7 @@ details > *:last-child { margin-bottom: 12px; }
 .acc { background: var(--blue-soft); color: var(--blue-dark); border-color: var(--blue-line); }
 .rel-1, .rel-2 { background: var(--green); color: #fff; }
 .rel-3 { background: #fff; color: var(--green-dark); border-color: var(--green-line); }
-.rel-4, .rel-h { background: #f2f2ef; color: #555; border-color: #d6d6d0; }
+.rel-4, .rel-h, .rel-b { background: #f2f2ef; color: #555; border-color: #d6d6d0; }
 .rel-5 { background: #fff; color: #777; border-color: #d6d6d0; border-style: dashed; }
 .pend { background: var(--warn-soft); color: var(--warn); border-color: #ecc98a; }
 
@@ -436,6 +436,9 @@ tr:last-child td { border-bottom: none; }
 .scope-note { margin: 8px 0 14px; font-size: .9rem; color: var(--muted); line-height: 1.65; }
 .scope-note b { color: var(--text); }
 .kpi-card .scope-note { margin: 6px 0 0; }
+/* 別枠（中国残留邦人等・引揚者などの援護）の金額。合計とは分けて小さく示す */
+.kpi-aside { margin: 10px 0 0; padding: 8px 12px; border-radius: 10px; background: #fff; border: 1px dashed #c9dccf; font-size: .9rem; color: var(--muted); line-height: 1.65; }
+.kpi-aside b { color: var(--text); }
 .kpi-how { margin: 12px 0 0; font-size: .92rem; }
 .kpi-how a { font-weight: 700; }
 .tc-text { font-size: 1.5rem; color: var(--text); }

@@ -84,7 +84,7 @@ function convert(raw) {
     if (!typeFits(p.type, p.relation)) throw new Error(`${p.pid} の類型「${p.type}」と分類「${p.relation}」が合いません`);
     const tg = (Array.isArray(p.target) ? p.target : String(p.target || '').split(/[;；]/)).map(s => s.trim()).filter(Boolean);
     if (!tg.length || tg.some(t => !TARGETS.includes(t))) throw new Error(`${p.pid} の対象者の範囲「${tg.join(';')}」は ${TARGETS.join('・')} から選んでください`);
-    const check = p.check_status || (p.relation === '保留' ? '要確認' : p.relation === '④' || (p.relation === '③' && !portionOf.has(p.pid)) ? '一部確認済み' : '確認済み');
+    const check = p.check_status || (p.relation === '保留' ? '要確認' : p.relation === '④' || p.relation === '別枠' || (p.relation === '③' && !portionOf.has(p.pid)) ? '一部確認済み' : '確認済み');
     if (!CHECK_STATUSES.includes(check)) throw new Error(`${p.pid} の確認状況「${check}」は ${CHECK_STATUSES.join('・')} のどれかにしてください`);
     return {
       project_id: pid.get(p.pid), code, name: p.name, department: p.department || '', purpose: p.purpose || '', content: p.content || '',
