@@ -4,10 +4,10 @@
 // 金額は calc.js の breakdown（tools/build.mjs の検算と同じ計算）で事業ごとに出す。集計（summary.json）と合わないときは、
 // 誤った金額を使わせないよう、合計を出さずに「確認中」と表示する。分類の基準は docs/分類と集計の基準.md
 
-import { db, loadDetail, loadPopulation, popOf, status, cell, munisOfPref, ratio, generalOf } from './store.js';
+import { db, loadDetail, loadPopulation, popOf, status, cell, munisOfPref, ratio, generalOf, cmpNotes } from './store.js';
 import { $, $$, esc, yen, yenExact, yenPer, pct, num, diffYen, fyFull, fmtDate, download, copyText, toast, ratioPct, yenShort } from './util.js';
 import { href, currentYear, currentStage, yearPicker, bindYearPicker } from './app.js';
-import { statusBadge, stLabel, relBadge, relName, fieldBadge, fieldLabel, sourceLink, sourceMeta, amountOrStatus, ratioView, scopeNoteHTML } from './components.js';
+import { statusBadge, stLabel, relBadge, relName, fieldBadge, fieldLabel, sourceLink, sourceMeta, amountOrStatus, ratioView, scopeNoteHTML, cmpNoteText } from './components.js';
 import { columnChart, lineChart, stackChart, COLORS } from './charts.js';
 import { FUND_KEYS, FUND_LABELS, COUNTED, breakdown, fieldTotals, valueOf } from './calc.js';
 import { renderUses, coverageHTML, singleCoverageHTML, overlapHTML, breakdownItems } from './uses.js';
@@ -59,7 +59,8 @@ export async function muniPage(ctx, code) {
   const total = checking ? null : counted;
   const sv = D.survey.find(s => s.fy === fy && s.stage === stage);
   const p = popOf(code, fy);
-  const notes = D.notes.filter(n => (!n.from_fy || n.from_fy <= fy) && (!n.to_fy || n.to_fy >= fy));
+  // 比べるときの注意は、ランキング・比較と同じ形（対象の事業を除いた合計つき）で出すので、集計といっしょの cmpNotes から取る
+  const notes = D.notes.filter(n => n.kind !== '比べるときの注意' && (!n.from_fy || n.from_fy <= fy) && (!n.to_fy || n.to_fy >= fy));
   const yrs = db.years;
   const when = `${fyFull(fy)}・${stage}`;
   const amtWord = stage === '決算' ? '決算額' : '予算';
@@ -101,6 +102,7 @@ export async function muniPage(ctx, code) {
     </div>
   </div>
   ${notes.map(n => `<p class="note"><b>${esc(n.kind)}：</b>${esc(n.note)}${n.source_url ? ` <a href="${esc(n.source_url)}" target="_blank" rel="noopener">出典</a>` : ''}</p>`).join('')}
+  ${cmpNotes(code, fy, stage).map(n => `<p class="note"><b>ほかの自治体と比べるときの注意：</b>${esc(cmpNoteText(n, total))}${n.url ? ` <a href="${esc(n.url)}" target="_blank" rel="noopener">出典</a>` : ''}</p>`).join('')}
 
   <section class="kpi-card" aria-labelledby="kpi-h">
     <p class="kpi-when"><span>${esc(when)}</span>${statusBadge(st)}</p>

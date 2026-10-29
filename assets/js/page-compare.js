@@ -1,9 +1,9 @@
 // 自治体を比較（2〜3自治体がおすすめ、最大5）。予算額・一般会計に占める割合・1人当たりをカードと横棒で、使い道（10分類）を帯で比べる
 
-import { db, loadPopulation, popOf, status, cell, ratio, generalOf } from './store.js';
+import { db, loadPopulation, popOf, status, cell, ratio, generalOf, cmpNotes } from './store.js';
 import { $, $$, esc, yen, yenExact, yenPer, num, fyFull, download, ratioPct } from './util.js';
 import { href, go, currentYear, currentStage, yearPicker, bindYearPicker, stageSeg } from './app.js';
-import { muniPicker, statusBadge, stLabel, fieldLabel, exploreTabs, ratioView, scopeNoteHTML } from './components.js';
+import { muniPicker, statusBadge, stLabel, fieldLabel, exploreTabs, ratioView, scopeNoteHTML, cmpNoteText } from './components.js';
 import { hbarChart, stackChart, columnChart, COLORS } from './charts.js';
 import { COUNTED, fundCoverage } from './calc.js';
 import { FIELDS } from './schema.js';
@@ -59,6 +59,7 @@ export async function comparePage(ctx) {
     if (r.st === '一部確認') reasons.push(`${r.m.full}は「${stLabel('一部確認')}」です。確認できた事業だけの合計なので、実際より少ない可能性があります（割合は確認済み分の割合）。`);
     else if (r.v === null) reasons.push(`${r.m.full}は${fyFull(fy)}の${stage}が「${stLabel(r.st)}」のため、金額を比べられません。`);
     else if (r.r.v === null) reasons.push(`${r.m.full}は一般会計に占める割合を出していません（${r.r.sub || r.r.text}）。`);
+    for (const n of cmpNotes(r.m.code, fy, stage)) reasons.push(`${r.m.full}：${cmpNoteText(n, r.v)}`);
   }
   const ok = rows.filter(r => r.v !== null);
   body.innerHTML = `

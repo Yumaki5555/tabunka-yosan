@@ -97,6 +97,33 @@ export function aggregate(d) {
   return out;
 }
 
+// 比べるときの注意（自治体の注記のうち種類が「比べるときの注意」の行）を、自治体ごとにまとめる（ランキング・比較・自治体のページで出す）。
+// 対象の事業IDがあれば、その事業を基本集計に数えた金額を年度・段階ごとに x に添える（画面で「この事業を除いた合計」を出すため）
+export function compareNotes(d) {
+  const projects = new Map(d.projects.map(p => [p.project_id, p]));
+  const out = {};
+  for (const n of d.notes || []) {
+    if (n.kind !== '比べるときの注意') continue;
+    const p = n.project_id ? projects.get(n.project_id) : null;
+    const o = { note: n.note };
+    if (n.from_fy) o.from = n.from_fy;
+    if (n.to_fy) o.to = n.to_fy;
+    if (p) {
+      o.pid = p.project_id; o.name = p.name;
+      const x = {};
+      for (const b of d.budgets) {
+        if (b.project_id !== p.project_id) continue;
+        const amt = countedAmount(p, b);
+        if (amt !== null) (x[b.fy] ??= {})[b.stage] = amt;
+      }
+      o.x = x;
+    }
+    if (n.source_url) o.url = n.source_url;
+    (out[n.code] ??= []).push(o);
+  }
+  return out;
+}
+
 // 一般会計の予算総額（分母）を、自治体×年度×段階の表にする。確認済みの行だけ（要確認・未確認は使わない）
 export function generalTotals(rows) {
   const out = {};

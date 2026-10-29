@@ -1,10 +1,10 @@
 // ランキング（同じ年度・同じ段階・同じ数え方で確認できた自治体だけを並べる。自治体のページの合計と同じ値を使う）
 // 自治体名・値・横棒を1行にまとめる。指標は「予算の合計・一般会計に占める割合・住民1人当たり・外国人住民1人当たり・増減」を切り替える
 
-import { db, metricOf, status, cell, loadPopulation, popOf, generalOf } from './store.js';
+import { db, metricOf, status, cell, loadPopulation, popOf, generalOf, cmpNotes } from './store.js';
 import { $, $$, esc, yen, yenExact, yenPer, pct, num, fyFull, download, ratioPct } from './util.js';
 import { href, currentYear, currentStage, yearPicker, bindYearPicker, stageSeg } from './app.js';
-import { statusBadge, stLabel, exploreTabs, scopeNoteHTML } from './components.js';
+import { statusBadge, stLabel, exploreTabs, scopeNoteHTML, cmpNoteText } from './components.js';
 import { ICON } from './icons.js';
 import { toCSV } from './csv.js';
 
@@ -57,12 +57,19 @@ export function rankBarsHTML(rows, { kind, fy, stage, limit }) {
   const neg = k.mode === 'yoy';
   return `<ol class="rank-bars">${shown.map(r => {
     const w = Math.max(1.5, Math.abs(r.v) / max * 100);
-    const sub = [k.mode !== 'total' ? `予算 ${yen(r.a)}` : '', k.mode === 'ratio' && generalOf(r.m.code, fy, stage) ? `一般会計 ${yen(generalOf(r.m.code, fy, stage), { approx: true })}` : '', r.st === '一部確認' ? '一部の資料だけ調査' : ''].filter(Boolean).join('・');
+    const sub = [k.mode !== 'total' ? `予算 ${yen(r.a)}` : '', k.mode === 'ratio' && generalOf(r.m.code, fy, stage) ? `一般会計 ${yen(generalOf(r.m.code, fy, stage), { approx: true })}` : '', r.st === '一部確認' ? '一部の資料だけ調査' : '', cmpNotes(r.m.code, fy, stage).length ? '※比べるときの注意あり' : ''].filter(Boolean).join('・');
     return `<li><span class="rb-rank">${r.rank}</span>
       <a class="rb-name" href="${href('/m/' + r.m.code, { y: fy, s: stage === '決算' ? '決算' : '' })}">${esc(r.m.isPref ? r.m.name : r.m.name)}<small>${esc(r.m.isPref ? '' : r.m.pref)}</small></a>
       <span class="rb-bar"><i class="${neg && r.v < 0 ? 'neg' : ''}${r.st === '一部確認' ? ' part' : ''}" style="width:${w.toFixed(2)}%"></i></span>
       <span class="rb-val">${esc(k.fmt(r.v))}${sub ? `<small>${esc(sub)}</small>` : ''}</span></li>`;
   }).join('')}</ol>`;
+}
+
+// 表示している順位の中で、比べるときの注意がある自治体をまとめて出す
+export function rankNotesHTML(rows, { fy, stage, limit }) {
+  const shown = limit ? rows.slice(0, limit) : rows;
+  const items = shown.flatMap(r => cmpNotes(r.m.code, fy, stage).map(n => `<li><a href="${href('/m/' + r.m.code, { y: fy, s: stage === '決算' ? '決算' : '' })}">${esc(r.m.isPref ? r.m.name : r.m.pref + r.m.name)}</a>（${r.rank}位）：${esc(cmpNoteText(n, r.a))}</li>`));
+  return items.length ? `<div class="note"><b>比べるときの注意</b><ul>${items.join('')}</ul></div>` : '';
 }
 
 export async function rankingPage(ctx) {
@@ -98,7 +105,7 @@ export async function rankingPage(ctx) {
       ${condition({ ...st, n: rows.length })}
       ${rows.length ? scopeNoteHTML() : ''}
       <h2 class="rank-h">${esc(k.label)}${desc ? '' : main === 'up' ? '' : ''}<small>${esc(st.level === 'pref' ? '都道府県庁' : '市区町村')}・${esc(fyFull(st.fy))}・${esc(st.stage)}</small></h2>
-      ${rows.length ? rankBarsHTML(rows, { kind: st.kind, fy: st.fy, stage: st.stage, limit: st.all ? 0 : LIMIT })
+      ${rows.length ? rankNotesHTML(rows, { fy: st.fy, stage: st.stage, limit: st.all ? 0 : LIMIT }) + rankBarsHTML(rows, { kind: st.kind, fy: st.fy, stage: st.stage, limit: st.all ? 0 : LIMIT })
         : `<p class="note">この条件で比べられる自治体は、まだありません。${!st.partial ? `「一部の資料だけ調べた自治体も含める」にすると表示される場合があります。` : ''}</p>`}
       ${rows.length > LIMIT && !st.all ? `<p><button type="button" class="btn btn-outline" id="rk-all">残りの${num(rows.length - LIMIT)}自治体も表示する</button></p>` : ''}
       <p class="next-links"><button type="button" class="linklike" id="rk-csv">${ICON.download}この順位をCSVでダウンロード</button><a href="${href('/compare', { y: st.fy, c: rows.slice(0, 3).map(r => r.m.code).join(',') })}">${ICON.compare}上位3つを比較する</a></p>`;
@@ -110,8 +117,8 @@ export async function rankingPage(ctx) {
     $('#rk-all')?.addEventListener('click', () => { st.all = true; draw(); });
     $('#rk-csv').addEventListener('click', () => {
       download(`ranking_${st.kind}_${st.level}_${st.fy}_${st.stage}.csv`, toCSV(
-        ['順位', '自治体コード', '都道府県', '自治体', '年度', '段階', '集計区分', '指標', '値', '多文化共生関連予算の合計（円）', '一般会計の予算総額（円）', '合計に入れた事業の数', '人口', '外国人住民数', '調査状況'],
-        rows.map(r => { const p = popOf(r.m.code, st.fy); return [r.rank, r.m.code, r.m.pref, r.m.isPref ? '' : r.m.name, st.fy, st.stage, '基本集計：①直接給付・支援＋②行政経費＋③一般事業のうち分かった部分', k.label, k.mode === 'yoy' ? (r.v * 100).toFixed(2) + '%' : k.mode === 'ratio' ? (r.v * 100).toFixed(4) + '%' : Math.round(r.v), r.a ?? '', generalOf(r.m.code, st.fy, st.stage) ?? '', r.n, p?.population ?? '', p?.foreign ?? '', stLabel(r.st)]; })));
+        ['順位', '自治体コード', '都道府県', '自治体', '年度', '段階', '集計区分', '指標', '値', '多文化共生関連予算の合計（円）', '一般会計の予算総額（円）', '合計に入れた事業の数', '人口', '外国人住民数', '調査状況', '比べるときの注意'],
+        rows.map(r => { const p = popOf(r.m.code, st.fy); return [r.rank, r.m.code, r.m.pref, r.m.isPref ? '' : r.m.name, st.fy, st.stage, '基本集計：①直接給付・支援＋②行政経費＋③一般事業のうち分かった部分', k.label, k.mode === 'yoy' ? (r.v * 100).toFixed(2) + '%' : k.mode === 'ratio' ? (r.v * 100).toFixed(4) + '%' : Math.round(r.v), r.a ?? '', generalOf(r.m.code, st.fy, st.stage) ?? '', r.n, p?.population ?? '', p?.foreign ?? '', stLabel(r.st), cmpNotes(r.m.code, st.fy, st.stage).map(n => cmpNoteText(n, r.a)).join(' ')]; })));
     });
   };
   draw();

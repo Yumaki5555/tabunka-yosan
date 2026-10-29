@@ -303,7 +303,15 @@ export class Checker {
         this.add('warn', 'budgets', b, `${b.code} の ${b.fy}年度 ${b.stage} の調査状況の行がありません（「一部確認」として表示します）`);
       }
     }
-    for (const n of d.notes || []) if (n.from_fy && n.to_fy && n.from_fy > n.to_fy) this.add('error', 'notes', n, '対象年度（から）が（まで）より後です');
+    for (const n of d.notes || []) {
+      if (n.from_fy && n.to_fy && n.from_fy > n.to_fy) this.add('error', 'notes', n, '対象年度（から）が（まで）より後です');
+      if (n.project_id) {
+        const p = projects.get(n.project_id);
+        if (!p) this.add('error', 'notes', n, `対象の事業ID ${n.project_id} が事業マスタにありません`);
+        else if (p.code !== n.code) this.add('error', 'notes', n, `対象の事業ID ${n.project_id} はほかの自治体の事業です`);
+        if (n.kind !== '比べるときの注意') this.add('warn', 'notes', n, '対象の事業IDは、種類が「比べるときの注意」の注記でだけ使います');
+      }
+    }
     return d;
   }
 

@@ -5,7 +5,7 @@
 // 公開しているデータは使わず、テスト用の小さなデータで確かめます。
 
 import { Checker, rawToYen } from '../assets/js/validate.js';
-import { aggregate, statusOf, valueOf, metric, breakdown, fundCoverage, fieldTotals, fieldShares, ratioOf, generalTotals } from '../assets/js/calc.js';
+import { aggregate, statusOf, valueOf, metric, breakdown, fundCoverage, fieldTotals, fieldShares, ratioOf, generalTotals, compareNotes } from '../assets/js/calc.js';
 import { parseCSV, toCSV, csvToObjects } from '../assets/js/csv.js';
 import { detectTable, TABLES } from '../assets/js/schema.js';
 
@@ -224,6 +224,21 @@ t('兆・億・万の書き方', rawToYen('1兆2,345億6,789', '万円') === 123
   t('一般会計の総額：単位の取り違えと、ほかの自治体の資料を止める', has(ck2, 'error', /総額（円）は/) && has(ck2, 'error', /別の自治体/));
   const { ck: ck3 } = check({ projects: [P('221309-009', '②')] });
   t('①②③の事業の会計が空欄なら知らせる', has(ck3, 'warn', /会計」が空欄/));
+}
+
+// ---------- 比べるときの注意 ----------
+{
+  const NT = { code: '221309', from_fy: 2026, to_fy: 2026, kind: '比べるときの注意', note: '大きな経費が入っています。', project_id: '221309-001' };
+  const { ck, d } = check({
+    projects: [P('221309-001'), P('221309-002', '③')], sources: [S],
+    budgets: [B('221309-001', 2026, '当初予算', 12345000, '12,345'), B('221309-002', 2026, '当初予算', 50000000, '50,000', '千円', { portion_yen: 1000000, page: '2' })],
+    survey: [{ code: '221309', fy: 2026, stage: '当初予算', status: '確認済み', checked_date: '2026-10-30' }],
+    notes: [NT, { code: '221309', kind: '合併', note: '合併しました。' }],
+  });
+  const cn = compareNotes(d)['221309'];
+  t('比べるときの注意に、対象の事業を数えた金額を添える（ほかの種類の注記は入れない）', ck.summary().error === 0 && cn.length === 1 && cn[0].pid === '221309-001' && cn[0].x[2026]['当初予算'] === 12345000);
+  const { ck: ck2 } = check({ projects: [P('221309-001')], notes: [{ ...NT, project_id: '221309-009' }, { ...NT, code: '220001' }] });
+  t('注記の対象の事業IDが事業マスタにない・ほかの自治体の事業ならエラー', has(ck2, 'error', /事業マスタにありません/) && has(ck2, 'error', /ほかの自治体の事業/));
 }
 
 console.log(`テスト：${ok + ng}項目のうち 合格 ${ok}・不合格 ${ng}`);

@@ -132,7 +132,7 @@ export const DOC_TYPES = ['当初予算書', '予算に関する説明書', '予
 export const RECIPIENT_TYPES = ['国際交流協会', 'NPO・市民団体', '市区町村', '都道府県', '民間企業', '学校法人', 'その他'];
 export const PAY_KINDS = ['補助', '委託', '負担金', '指定管理', '交付金', 'その他'];
 export const CHANGE_KINDS = ['追加', '訂正', '削除', '出典変更', '状況変更'];
-export const NOTE_KINDS = ['合併', '名称変更', '制度変更', 'その他'];
+export const NOTE_KINDS = ['合併', '名称変更', '制度変更', '比べるときの注意', 'その他'];
 export const LINK_SITES = ['mou-map', 'zairyu', 'karte', 'other'];
 
 // 公開する文章に入れない、調査の作業メモの言葉（サーバーの制限・道具の名前・資料の取り方・作業日誌・以前の区分など）。
@@ -309,14 +309,15 @@ export const TABLES = {
     ],
   },
   notes: {
-    title: '自治体の注記（合併・制度変更）', dir: 'notes', key: null,
-    desc: '合併・名称変更・制度変更などで、年度の比較に注意が必要なとき1行。',
+    title: '自治体の注記（合併・制度変更・比べるときの注意）', dir: 'notes', key: null,
+    desc: '合併・名称変更・制度変更などで年度の比較に注意が必要なときや、ほかの自治体と合計を比べるときに注意が必要なとき（その自治体だけ大きな経費が金額つきで分かっているなど）に1行。',
     cols: [
       C('code', '自治体コード', 'code', { required: true }),
       C('from_fy', '対象年度（から）', 'year'),
       C('to_fy', '対象年度（まで）', 'year'),
       C('kind', '種類', 'enum', { required: true, values: NOTE_KINDS }),
       C('note', '注記', 'text', { required: true }),
+      C('project_id', '対象の事業ID', 'id', { pattern: /^\d{6}-\d{3}$/, hint: '比べるときの注意が特定の事業によるとき。ランキング・比較・自治体のページに、その事業を除いた合計も出します（その事業が合計に入っている年度・段階だけ注意を出します）' }),
       C('source_url', '出典URL', 'url'),
     ],
   },

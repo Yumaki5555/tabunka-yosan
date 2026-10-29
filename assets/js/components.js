@@ -166,6 +166,12 @@ export function scopeNoteHTML() {
   return `<p class="scope-note"><b>この合計は、外国籍の人だけに使われる予算ではありません。</b>帰国児童生徒・中国帰国者など日本国籍の人や、外国語を使う人も対象に含む事業が入ることがあります（対象者の範囲は事業ごとに書いています）。<a href="#/about?to=scope">くわしく見る</a></p>`;
 }
 
+// 比べるときの注意の1件を文にする（対象の事業の金額と合計が分かれば、その事業を除いた合計も添える）
+export function cmpNoteText(n, total) {
+  if (!(n.amt > 0) || !(total > 0) || n.amt > total) return n.note;
+  return `${n.note}合計のうち「${n.name}」は${yen(n.amt, { approx: true })}（${Math.round(n.amt / total * 100)}%）で、これを除くと${yen(total - n.amt, { approx: true })}です。`;
+}
+
 // 一般会計に占める割合の表示（出せないときは理由を書く。0%とは書かない）
 //   text：大きく出す文字、sub：小さく添える説明、v：割合（出せないとき null）
 export function ratioView(code, fy, stage) {
