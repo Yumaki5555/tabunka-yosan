@@ -39,7 +39,7 @@ export function nationalPage(ctx) {
       </div>
       <section class="section" aria-labelledby="nu-h"><h2 id="nu-h" class="visually-hidden">使い道の円グラフ</h2><div id="nu-box"></div></section>
       <details class="more-box"><summary>集計の範囲と注意（どこまで調べた？）</summary><div id="nu-cov"></div></details>
-      <p class="next-links"><a href="${href('/ranking', { y: st.fy })}">${ICON.bars}ランキングで比べる</a><a href="${href('/', { y: st.fy, to: 'find' })}">${ICON.map}地図で見る</a></p>`;
+      <p class="next-links"><a href="${href('/ranking', { y: st.fy })}">${ICON.bars}ランキングで比べる</a><a href="${href('/find', { y: st.fy })}">${ICON.map}地図で見る</a></p>`;
     bindYearPicker(app, y => { st.fy = y; draw(); });
     $$('[data-stage]', app).forEach(b => b.addEventListener('click', () => { st.stage = b.dataset.stage; draw(); }));
     $$('[data-us]', app).forEach(b => b.addEventListener('click', () => { st.us = b.dataset.us; draw(); }));

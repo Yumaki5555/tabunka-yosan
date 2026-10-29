@@ -431,7 +431,7 @@ export async function muniPage(ctx, code) {
     const tr = D.recipients.filter(r => r.recipient_type === '市区町村' && r.fy === fy);
     $('#pref-munis').innerHTML = `<p class="small">都道府県の金額は<b>都道府県庁の予算</b>で、県内の市区町村の予算は含みません。県と市区町村の金額は足さないでください（県から市区町村への補助が二重に数えられるおそれがあるため）。</p>
       ${tr.length ? `<p class="cond"><b>県から市区町村への補助（自治体間の資金移転）：</b>${tr.map(r => `${esc(r.recipient)} ${esc(yen(r.amount_yen))}（${esc(r.stage)}）`).join('、')}。この分は市区町村の予算にも「都道府県からの補助」として出てきます。</p>` : ''}
-      <p>調査した市区町村：${surveyed.length} / ${ms.length}（${fyFull(fy)}・当初予算）。<a href="${href('/', { y: fy, p: m.pc, to: 'find' })}">地図で見る</a></p>
+      <p>調査した市区町村：${surveyed.length} / ${ms.length}（${fyFull(fy)}・当初予算）。<a href="${href('/find', { y: fy, p: m.pc })}">地図で見る</a></p>
       ${surveyed.length ? `<ul class="muni-list">${surveyed.map(x => { const a = amountOrStatus(x.code, fy, '当初予算'); const r = ratioView(x.code, fy, '当初予算'); return `<li><a href="${href('/m/' + x.code, { y: fy })}">${esc(x.name)}</a><span class="amt">${a.value !== undefined ? esc(a.text) : statusBadge(a.st)}</span>${a.value !== undefined ? `<span class="small muted">一般会計に占める割合 ${esc(r.text)}・${esc(stLabel(a.st))}</span>` : ''}</li>`; }).join('')}</ul>` : ''}`;
   });
 

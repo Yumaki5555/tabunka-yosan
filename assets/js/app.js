@@ -4,6 +4,7 @@
 import { loadCore, db } from './store.js';
 import { $, $$, esc, toast } from './util.js';
 import { homePage } from './page-home.js';
+import { findPage } from './page-find.js';
 import { muniPage } from './page-muni.js';
 import { searchPage } from './page-search.js';
 import { nationalPage } from './page-national.js';
@@ -18,6 +19,7 @@ import { dataPage } from './page-data.js';
 // [道, 作る関数, 題名, メニューのどれを光らせるか]
 const ROUTES = [
   [/^\/$/, ctx => homePage(ctx), null, 'home'],
+  [/^\/find$/, ctx => findPage(ctx), '地図・都道府県から探す', 'home'],
   [/^\/m\/(\d{6})$/, (ctx, m) => muniPage(ctx, m[1]), null, 'home'],
   [/^\/national$/, ctx => nationalPage(ctx), '全国の使い道', 'explore'],
   [/^\/ranking$/, ctx => rankingPage(ctx), 'ランキング', 'explore'],
@@ -91,16 +93,18 @@ export function stageSeg(stage, attr = 'data-stage') {
 }
 
 // 以前のURL（トップページの中の見出しへの移動）を、今のページに読みかえる
-const LEGACY = { sanpun: '/guide', what: '/guide', uses: '/national', ranking: '/ranking' };
+const LEGACY = { sanpun: '/guide', what: '/guide', uses: '/national', ranking: '/ranking', map: '/find' };
+// 以前はトップページにあった地図の状態（色分け・都道府県・選んだ自治体など）。今は #/find に引き継ぐ
+const MAP_KEYS = ['ft', 'mm', 'p', 'sel', 'pt'];
 
 let lastPath = null;
 function render() {
   const app = $('#app');
   let { path, params } = parseHash();
   const to = params.get('to');
-  if (path === '/' && to && (LEGACY[to] || /^s3-\d$/.test(to))) {
+  if (path === '/' && ((to && (LEGACY[to] || /^s3-\d$/.test(to))) || MAP_KEYS.some(k => params.has(k)))) {
     const p = new URLSearchParams(params); p.delete('to');
-    history.replaceState(null, '', href(LEGACY[to] || '/guide', Object.fromEntries(p)));
+    history.replaceState(null, '', href(MAP_KEYS.some(k => params.has(k)) ? '/find' : LEGACY[to] || '/guide', Object.fromEntries(p)));
     ({ path, params } = parseHash());
   }
   const samePath = path === lastPath;

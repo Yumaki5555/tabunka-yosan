@@ -100,12 +100,20 @@ function step5() {
 export function guidePage(ctx) {
   const { app, params } = ctx;
   const fy = currentYear(params);
-  app.innerHTML = `<div class="page-head g-top"><span class="kicker">初めての方へ</span><h1>3分でわかる 多文化共生予算</h1>
-    <p class="lead">5つの図で、何のお金か・数字の見方をつかめます。</p>
-    <ol class="g-toc">${GUIDE_STEPS.map(([id, t], i) => `<li><a href="${href('/guide', { to: id })}"><span>${i + 1}</span>${esc(t)}</a></li>`).join('')}</ol></div>
+  const how = (ic, t, d) => `<li>${ICON[ic]}<b>${t}</b><span>${d}</span></li>`;
+  app.innerHTML = `<div class="page-head g-top"><span class="kicker">はじめての方向け</span><h1>3分でわかる 多文化共生予算</h1>
+    <p class="lead">何のお金か・数字の見方を5つの図で、このサイトの使い方を最後にまとめて説明します。</p>
+    <ol class="g-toc">${GUIDE_STEPS.map(([id, t], i) => `<li><a href="${href('/guide', { to: id })}"><span>${i + 1}</span>${esc(t)}</a></li>`).join('')}
+      <li><a href="${href('/guide', { to: 'g-how' })}"><span>${ICON.search}</span>このサイトの使い方</a></li></ol></div>
     <div class="g-wrap">${step1()}${step2(fy)}${step3(fy)}${step4(fy)}${step5()}</div>
-    <div class="g-end"><h2>実際のデータを調べる</h2>
-      <div class="g-go"><a class="btn" href="#/?to=find">${ICON.search}自分の自治体を調べる</a><a class="btn btn-outline" href="${href('/national', { y: fy })}">${ICON.bars}全国を見る</a></div></div>`;
+    <section class="g-end" id="g-how" aria-labelledby="g-how-h"><h2 id="g-how-h">このサイトの使い方</h2>
+      <ol class="g-how">
+        ${how('search', '自治体を探す', 'トップページで名前を入れるか、地図・都道府県の一覧から選びます。')}
+        ${how('yen', '予算と割合を見る', '自治体のページの最初に、確認できた予算の合計と、一般会計に占める割合が出ます。')}
+        ${how('donut', '使い道と事業を見る', '円グラフで使い道（10分類）を、一覧で事業ごとの金額と出典の資料を確かめられます。')}
+        ${how('bars', 'ほかと比べる', '「全国を見る」のランキング・比較・年度別の変化で、ほかの自治体と並べて見られます。')}
+      </ol>
+      <div class="g-go"><a class="btn" href="#/?to=find">${ICON.search}自分の自治体を調べる</a><a class="btn btn-outline" href="${href('/national', { y: fy })}">${ICON.bars}全国を見る</a></div></section>`;
   // 目次から同じページの図へ移動（もう一度押しても移動する）
   app.querySelector('.g-toc').addEventListener('click', ev => {
     const a = ev.target.closest('a'); if (!a) return;

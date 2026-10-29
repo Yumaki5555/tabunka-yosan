@@ -68,12 +68,16 @@ export function searchMunis(q, { limit = 12, prefOnly = null } = {}) {
 }
 
 // 入力するたびに候補を出す欄。onPick(m) で選んだ自治体を受け取る
-export function muniPicker(root, { id, label, placeholder = '例：浜松市／しんじゅく／221309', fy, onPick, big = false, extra }) {
+// button を渡すと右に検索ボタンを置く（名前がぴったり合えばその自治体へ、候補が複数なら一覧を出す）
+export function muniPicker(root, { id, label, placeholder = '例：浜松市／しんじゅく／221309', fy, onPick, big = false, extra, button = '' }) {
   root.innerHTML = `<div class="picker${big ? ' picker-big' : ''}">
     <label for="${id}" class="picker-label">${esc(label)}</label>
-    <div class="picker-box">
-      <input id="${id}" type="search" autocomplete="off" placeholder="${esc(placeholder)}" role="combobox" aria-expanded="false" aria-controls="${id}-list" aria-autocomplete="list">
-      <ul id="${id}-list" class="picker-list" role="listbox" hidden></ul>
+    <div class="picker-row">
+      <div class="picker-box">
+        <input id="${id}" type="search" autocomplete="off" placeholder="${esc(placeholder)}" role="combobox" aria-expanded="false" aria-controls="${id}-list" aria-autocomplete="list">
+        <ul id="${id}-list" class="picker-list" role="listbox" hidden></ul>
+      </div>
+      ${button ? `<button type="button" class="btn picker-go">${esc(button)}</button>` : ''}
     </div>
   </div>`;
   const input = root.querySelector('input');
@@ -118,6 +122,19 @@ export function muniPicker(root, { id, label, placeholder = '例：浜松市／�
     if (!li) return;
     if (li.dataset.href) { location.hash = li.dataset.href.slice(1); return; }
     pick(Number(li.dataset.i));
+  });
+  root.querySelector('.picker-go')?.addEventListener('click', () => {
+    const n = normQ(input.value);
+    if (!n) {
+      list.innerHTML = '<li class="picker-empty">自治体名を入れてください（例：横浜市）</li>';
+      list.hidden = false; input.setAttribute('aria-expanded', 'true'); input.focus();
+      return;
+    }
+    act = -1; draw();
+    const exact = items.findIndex(m => normQ(m.name) === n || normQ(m.full) === n);
+    if (exact >= 0) { pick(exact); return; }
+    if (items.length === 1 && !list.querySelector('.po-extra')) { pick(0); return; }
+    input.focus();
   });
   document.addEventListener('click', ev => { if (!root.contains(ev.target)) list.hidden = true; });
   return input;

@@ -30,7 +30,7 @@ export function statusPage(ctx) {
 
     <h2>都道府県ごとの進み具合（${fyFull(fy)}・当初予算）</h2>
     <div class="table-wrap"><table><thead><tr><th>地方</th><th>都道府県</th><th>県庁</th><th class="num">市区町村（調査済み／全体）</th></tr></thead><tbody>
-      ${REGIONS.flatMap(([r, pcs]) => pcs.map((pc, i) => { const p = prefs.find(x => x.pc === pc); const ms = munis.filter(m => m.pc === pc); const done = ms.filter(m => status(m.code, fy, '当初予算') !== '未調査').length; return `<tr>${i === 0 ? `<td rowspan="${pcs.length}">${esc(r)}</td>` : ''}<td><a href="${href('/', { y: fy, p: pc, to: 'map' })}">${esc(p.name)}</a></td><td>${statusBadge(status(p.code, fy, '当初予算'))}</td><td class="num">${done} / ${ms.length}</td></tr>`; })).join('')}
+      ${REGIONS.flatMap(([r, pcs]) => pcs.map((pc, i) => { const p = prefs.find(x => x.pc === pc); const ms = munis.filter(m => m.pc === pc); const done = ms.filter(m => status(m.code, fy, '当初予算') !== '未調査').length; return `<tr>${i === 0 ? `<td rowspan="${pcs.length}">${esc(r)}</td>` : ''}<td><a href="${href('/find', { y: fy, p: pc })}">${esc(p.name)}</a></td><td>${statusBadge(status(p.code, fy, '当初予算'))}</td><td class="num">${done} / ${ms.length}</td></tr>`; })).join('')}
     </tbody></table></div>
 
     <h2>調査した自治体（全年度）</h2>
