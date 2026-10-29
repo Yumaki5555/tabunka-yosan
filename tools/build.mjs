@@ -88,6 +88,12 @@ for (const [code, ys] of Object.entries(sum)) for (const [fy, sts] of Object.ent
   if ((c.g || 0) !== bd.tg || (c.sx || 0) !== bd.ts || (c.gx || 0) !== bd.ux.length) bad.push(`会計ごとの金額（集計 一般会計${c.g || 0}円・特別会計など${c.sx || 0}円・会計不明${c.gx || 0}件、内訳 ${bd.tg}円・${bd.ts}円・${bd.ux.length}件）`);
   if (c.st !== '該当事業なし' && (c.g || 0) + (c.sx || 0) > (c.a ?? 0)) bad.push('一般会計と特別会計などの金額の合計が、基本集計をこえています');
   for (const ck of bd.checks) if (!ck.ok) bad.push(`点検「${ck.label}」：${ck.detail}`);
+  // 前の年度との「同じ事業どうし」の足し算（ym）は、片方の年度だけの事業と合わせると、それぞれの年度の基本集計と一致するはず
+  const pc = sum[code][Number(fy) - 1]?.[stage];
+  if (c.ym && c.st !== '該当事業なし' && pc.st !== '該当事業なし') {
+    if (c.ym.c + c.ym.o1w !== (c.a ?? 0)) bad.push(`同じ事業どうしの比較（後の年度 ${c.ym.c}円＋この年度だけの事業 ${c.ym.o1w}円）と基本集計（${c.a ?? 0}円）`);
+    if (c.ym.p + c.ym.o0w !== (pc.a ?? 0)) bad.push(`同じ事業どうしの比較（前の年度 ${c.ym.p}円＋前の年度だけの事業 ${c.ym.o0w}円）と前の年度の基本集計（${pc.a ?? 0}円）`);
+  }
   if (bad.length) checker.add('error', 'budgets', where, `検算が合いません：${bad.join('／')}`);
 }
 // 使い道の検算：年度・段階ごとに、全国の事業の一覧の使い道ごとの足し算が、自治体ごとの集計を足したもの（円グラフの金額）と一致するか

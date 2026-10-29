@@ -7,7 +7,7 @@ import { href, go, currentYear, currentStage } from './app.js';
 import { muniPicker, stLabel, fieldLabel, exploreTabs, scopeNoteHTML } from './components.js';
 import { ICON } from './icons.js';
 import { columnChart, COLORS } from './charts.js';
-import { COUNTED, countedAmount } from './calc.js';
+import { COUNTED, countedAmount, matchedPair } from './calc.js';
 import { FIELDS } from './schema.js';
 
 const val = (code, y, s) => { const st = status(code, y, s), c = cell(code, y, s); if (st === '該当事業なし') return 0; return c && COUNTED.has(st) ? c.a : null; };
@@ -88,13 +88,19 @@ export async function trendPage(ctx) {
 
   // 表：年度ごとの合計・分野・財源
   const cols = range;
-  // dfmt：増減の書き方（円・件・人）。always：調査していない年度でも出す（外国人住民数）
-  const tableRow = (label, fn, fmt = yenExact, dfmt = diffYen, always = false) => `<tr><td>${label}</td>${cols.map(y => `<td class="num">${ok(y) || always ? esc(fmt(fn(y))) : `<small>${esc(stLabel(status(code, y, stage)))}</small>`}</td>`).join('')}${mode === 'two' ? `<td class="num">${(cmp(a) && cmp(b)) || always ? esc(dfmt(fn(b) - fn(a))) + (fn(a) ? `<br><small>${esc(pct((fn(b) - fn(a)) / fn(a)))}</small>` : '') : '—'}</td>` : ''}</tr>`;
+  // dfmt：増減の書き方（円・件・人）。always：調査していない年度でも出す（外国人住民数）。noPct：増減の率を出さない
+  const tableRow = (label, fn, fmt = yenExact, dfmt = diffYen, always = false, noPct = false) => `<tr><td>${label}</td>${cols.map(y => `<td class="num">${ok(y) || always ? esc(fmt(fn(y))) : `<small>${esc(stLabel(status(code, y, stage)))}</small>`}</td>`).join('')}${mode === 'two' ? `<td class="num">${(cmp(a) && cmp(b)) || always ? esc(dfmt(fn(b) - fn(a))) + (fn(a) && !noPct ? `<br><small>${esc(pct((fn(b) - fn(a)) / fn(a)))}</small>` : '') : '—'}</td>` : ''}</tr>`;
+  // 2つの年度を比べるときは、増減の率を両方の年度に金額がある同じ事業どうしで出す（合計の行は差の金額だけ）
+  const ym = mode === 'two' && cmp(a) && cmp(b) && a !== b ? matchedPair(P, B, a, b, stage) : null;
+  const ymRow = ym ? `<tr><td>うち同じ事業どうし（${num(ym.n)}件）</td><td class="num">${esc(yenExact(ym.p))}</td><td class="num">${esc(yenExact(ym.c))}</td><td class="num">${esc(diffYen(ym.c - ym.p))}${ym.p > 0 ? `<br><small>${esc(pct((ym.c - ym.p) / ym.p))}</small>` : ''}</td></tr>
+      <tr><td>${a}年度だけの事業</td><td class="num">${esc(yenExact(ym.o0w))}<br><small>${num(ym.o0n)}件</small></td><td class="num">—</td><td class="num">—</td></tr>
+      <tr><td>${b}年度だけの事業</td><td class="num">—</td><td class="num">${esc(yenExact(ym.o1w))}<br><small>${num(ym.o1n)}件</small></td><td class="num">—</td></tr>` : '';
   const diffN = u => n => `${n > 0 ? '+' : n < 0 ? '−' : '±'}${num(Math.abs(n))}${u}`;
   const fundKnown = cols.some(y => ok(y) && ['national', 'pref', 'national_pref', 'bond', 'other', 'general'].some(k => fundOf(y, k) > 0));
   main.insertAdjacentHTML('beforeend', `<h3>使い道ごとの増減・財源の変化</h3>
     <div class="table-wrap"><table><thead><tr><th>項目</th>${cols.map(y => `<th class="num">${y}年度${ok(y) && part(y) ? '<br><small>一部の資料だけ調査</small>' : ''}</th>`).join('')}${mode === 'two' ? '<th class="num">増減</th>' : ''}</tr></thead><tbody>
-      ${tableRow('<b>多文化共生関連予算の合計</b>', y => val(code, y, stage))}
+      ${tableRow('<b>多文化共生関連予算の合計</b>', y => val(code, y, stage), yenExact, diffYen, false, !!ym)}
+      ${ymRow}
       <tr><td>一般会計に占める割合</td>${cols.map(y => { const r = ratio(code, y, stage); return `<td class="num">${r.v !== null ? esc(ratioPct(r.v)) : '<small>未確認</small>'}</td>`; }).join('')}${mode === 'two' ? '<td class="num">—</td>' : ''}</tr>
       ${FIELDS.filter(f => cols.some(y => fieldOf(y, f))).map(f => tableRow(`使い道：${esc(fieldLabel(f))}`, y => fieldOf(y, f))).join('')}
       ${fundKnown ? `${tableRow('財源：国からの補助', y => fundOf(y, 'national'))}
@@ -106,6 +112,7 @@ export async function trendPage(ctx) {
       ${tableRow('合計に入れた事業の数', y => projsIn(y).size, n => `${n}件`, diffN('件'))}
       ${tableRow('外国人住民数（前年12月末）', y => popOf(code, y)?.foreign || 0, n => n ? `${num(n)}人` : '—', diffN('人'), true)}
     </tbody></table></div>
+    ${ym ? `<p class="small">増減の率は、両方の年度に金額がある同じ事業（前身の事業でつないだ事業を含む）どうしで比べています。片方の年度だけの事業には、新しく始まった事業・終わった事業のほか、前の年度の補正予算に前倒しして当初予算に載らなかった事業や、片方の年度だけ金額が分かった事業が入り、合計の差が実際の変化とずれるためです。</p>` : ''}
     ${cols.some(y => ok(y) && part(y)) ? `<p class="small">「一部の資料だけ調査」の年度は、見つかって確かめられた事業だけの合計です。調べた範囲の差で増減が実際より大きく見えるので、${mode === 'two' ? 'この年度との増減は出していません。' : 'ほかの年度と単純に比べられません。'}</p>` : ''}
     <p class="small muted">財源は、その事業だけの内訳が資料にあるものだけを足しています。財源が分からない分は、自治体自身の負担として数えていません。外国人住民数と予算の増減に、直接の因果関係があるとは限りません。</p>`);
 

@@ -27,6 +27,38 @@ export function countedAmount(p, b) {
   return null;
 }
 
+// 前身の事業IDでつないだ事業のまとまりの代表（いちばん古い前身の事業ID）。内容が変わって別IDになった事業も、同じ事業として年度をまたいで比べる
+function rootOf(P, id) {
+  let cur = id;
+  const seen = new Set([id]);
+  for (let p = P.get(cur); p?.predecessor && P.has(p.predecessor) && !seen.has(p.predecessor); p = P.get(cur)) { cur = p.predecessor; seen.add(cur); }
+  return cur;
+}
+
+// 前の年度との増減を「同じ事業どうし」で比べるための足し算。P は事業ID→事業、budgets はその自治体の予算・決算の行。
+// 両方の年度に基本集計の金額がある事業（前身の事業でつないだまとまり）だけを足す（n 件、p：前の年度、c：後の年度）。
+// 片方の年度だけの事業は別に数える（o0n・o0w：前の年度だけ、o1n・o1w：後の年度だけ）。
+// 新しく始まった事業・終わった事業のほか、前の年度の補正予算に前倒しして当初予算に載らなかった事業や、片方の年度だけ金額が分かった事業で、
+// 合計どうしの増減が実際の変化とずれるのを防ぐ
+export function matchedPair(P, budgets, y0, y1, stage) {
+  const g = new Map();
+  for (const b of budgets) {
+    if (b.stage !== stage || (b.fy !== y0 && b.fy !== y1)) continue;
+    const amt = countedAmount(P.get(b.project_id), b);
+    if (amt === null) continue;
+    const k = rootOf(P, b.project_id);
+    const e = g.get(k) || g.set(k, { a0: null, a1: null }).get(k);
+    if (b.fy === y0) e.a0 = (e.a0 ?? 0) + amt; else e.a1 = (e.a1 ?? 0) + amt;
+  }
+  const o = { n: 0, p: 0, c: 0, o0n: 0, o0w: 0, o1n: 0, o1w: 0 };
+  for (const e of g.values()) {
+    if (e.a0 !== null && e.a1 !== null) { o.n++; o.p += e.a0; o.c += e.a1; }
+    else if (e.a0 !== null) { o.o0n++; o.o0w += e.a0; }
+    else { o.o1n++; o.o1w += e.a1; }
+  }
+  return o;
+}
+
 export function aggregate(d) {
   const projects = new Map(d.projects.map(p => [p.project_id, p]));
   const fundBy = new Map(d.funds.filter(f => f.verified === '確認済み').map(f => [`${f.project_id}|${f.fy}|${f.stage}`, f]));
@@ -98,6 +130,13 @@ export function aggregate(d) {
     if (!c.gx) delete c.gx;
     if (!c.bn) { delete c.bn; delete c.bw; }
   }
+  // ym：前の年度との「同じ事業どうし」の足し算（matchedPair）。前の年度の同じ段階の集計があるときだけ付ける
+  const budgetsBy = {};
+  for (const b of d.budgets) (budgetsBy[b.code] ??= []).push(b);
+  for (const code of Object.keys(out)) for (const fy of Object.keys(out[code])) for (const stage of Object.keys(out[code][fy])) {
+    if (!out[code][fy - 1]?.[stage]) continue;
+    out[code][fy][stage].ym = matchedPair(projects, budgetsBy[code] || [], Number(fy) - 1, Number(fy), stage);
+  }
   return out;
 }
 
@@ -160,13 +199,13 @@ export function metric(mode, { sum, code, fy, stage, pop, includePartial, gen })
   if (mode === 'perForeign') return v !== null && pop?.foreign ? v / pop.foreign : null;
   if (mode === 'perCapita') return v !== null && pop?.population ? v / pop.population : null;
   // 増減は、両方の年度を主な資料で調査済みのときだけ出す。一部の資料だけ調べた年度があると、調べた範囲の差で増減が大きく見えるので、
-  // includePartial（一部の資料だけ調べた自治体も含める）のときも比べない
+  // includePartial（一部の資料だけ調べた自治体も含める）のときも比べない。
+  // 率は合計どうしではなく、両方の年度に金額がある同じ事業どうし（c.ym）で計算する
   if (mode === 'yoy') {
     const p = cellOf(sum, code, fy - 1, stage);
     if (!comparableYoy(c) || !comparableYoy(p)) return null;
-    const v1 = valueOf(c), pv = valueOf(p);
-    if (v1 === null || pv === null || pv === 0) return null;
-    return (v1 - pv) / pv;
+    if (valueOf(c) === null || valueOf(p) === null || !(c.ym?.n > 0) || !(c.ym.p > 0)) return null;
+    return (c.ym.c - c.ym.p) / c.ym.p;
   }
   return null;
 }

@@ -395,11 +395,18 @@ export async function muniPage(ctx, code) {
     const v0 = val(fy - 1, stage), v1 = val(fy, stage);
     // 一部の資料だけ調べた年度があるときは、調べた範囲の差で増減が大きく見えるので、増減の金額と率を出さない
     const partialYrs = [fy - 1, fy].filter(y => status(code, y, stage) === '一部確認');
+    // 増減の率は、合計どうしではなく両方の年度に金額がある同じ事業どうしで出す（片方の年度だけの事業は件数と金額を別に示す）
+    const yoyHTML = (a0, a1, ym) => {
+      const head = `${fy - 1}年度の${stage} <b>${esc(yen(a0))}</b> → ${fy}年度 <b>${esc(yen(a1))}</b>（合計の差 ${esc(diffYen(a1 - a0))}）`;
+      const only = ym && (ym.o0n || ym.o1n) ? `<br><small>このほか、${fy - 1}年度だけの事業 ${num(ym.o0n)}件（${esc(yen(ym.o0w))}）、${fy}年度だけの事業 ${num(ym.o1n)}件（${esc(yen(ym.o1w))}）。新しく始まった事業・終わった事業のほか、前の年度の補正予算に前倒しして当初予算に載らなかった事業や、片方の年度だけ金額が分かった事業があると合計の差が実際の変化とずれるので、増減の率は同じ事業どうしで比べています。</small>` : '';
+      if (!(ym?.n > 0) || !(ym.p > 0)) return `${head}<br>両方の年度に金額がある同じ事業がないため、増減の率は出していません。${only}`;
+      return `${head}<br>同じ事業どうし（${num(ym.n)}件）の増減：${esc(yen(ym.p))} → ${esc(yen(ym.c))}：<b class="${ym.c >= ym.p ? 'up' : 'down'}">${esc(diffYen(ym.c - ym.p))}（${esc(pct((ym.c - ym.p) / ym.p))}）</b>${only}`;
+    };
     const box = $('#yr-box');
     box.innerHTML = `<p class="yoy">${partialYrs.length && v0 !== null && v1 !== null
       ? `${partialYrs.map(y => `${y}年度`).join('と')}の${stage}は「${esc(stLabel('一部確認'))}」（見つかって確かめられた事業だけを登録）のため、前の年度と比べられません。調べた範囲の差で、増減が実際より大きく見えてしまうためです。`
       : v0 !== null && v1 !== null && v0 > 0
-      ? `${fy - 1}年度の${stage} <b>${esc(yen(v0))}</b> → ${fy}年度 <b>${esc(yen(v1))}</b>：<b class="${v1 >= v0 ? 'up' : 'down'}">${esc(diffYen(v1 - v0))}（${esc(pct((v1 - v0) / v0))}）</b>`
+      ? yoyHTML(v0, v1, cell(code, fy, stage)?.ym)
       : `${fy - 1}年度の${stage}は「${esc(missing(fy - 1, stage))}」のため、前の年度と比べられません。`}</p>
       <div class="seg seg-sm" role="group" aria-label="グラフの指標"><button type="button" data-tm="amt" aria-pressed="true">予算額</button><button type="button" data-tm="ratio" aria-pressed="false">一般会計に占める割合</button></div>
       <div id="ch-yr-wrap"></div><div id="tb-yr"></div>`;

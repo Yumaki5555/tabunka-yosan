@@ -5,7 +5,7 @@
 // 公開しているデータは使わず、テスト用の小さなデータで確かめます。
 
 import { Checker, rawToYen } from '../assets/js/validate.js';
-import { aggregate, statusOf, valueOf, metric, breakdown, fundCoverage, fieldTotals, fieldShares, ratioOf, generalTotals } from '../assets/js/calc.js';
+import { aggregate, statusOf, valueOf, metric, breakdown, fundCoverage, fieldTotals, fieldShares, ratioOf, generalTotals, matchedPair } from '../assets/js/calc.js';
 import { parseCSV, toCSV, csvToObjects } from '../assets/js/csv.js';
 import { detectTable, TABLES } from '../assets/js/schema.js';
 
@@ -177,7 +177,15 @@ const has = (ck, level, re) => ck.issues.some(i => i.level === level && re.test(
   t('記録のない年度は未調査', statusOf(sum, '221309', 2020, '当初予算', 2025) === '未調査');
   t('今年度の決算は決算未公表', statusOf(sum, '220001', 2026, '決算', 2025) === '決算未公表');
   t('未調査は値なし（0円にしない）', valueOf(null) === null);
-  t('前年度比', Math.abs(metric('yoy', { sum, code: '221309', fy: 2026, stage: '当初予算', pop: null }) - (31000000 - 8000000) / 8000000) < 1e-9);
+  t('前年度比は同じ事業どうしで計算する（合計どうしではない）', Math.abs(metric('yoy', { sum, code: '221309', fy: 2026, stage: '当初予算', pop: null }) - (10000000 - 8000000) / 8000000) < 1e-9);
+  t('片方の年度だけの事業は別に数える', c.ym.n === 1 && c.ym.p === 8000000 && c.ym.c === 10000000 && c.ym.o1n === 2 && c.ym.o1w === 21000000 && c.ym.o0n === 0 && c.ym.o0w === 0
+    && c.ym.c + c.ym.o1w === c.a && sum['221309'][2025]['当初予算'].ym === undefined);
+  {
+    const PP = new Map([['221309-101', { project_id: '221309-101', relation: '②' }], ['221309-102', { project_id: '221309-102', relation: '②', predecessor: '221309-101' }], ['221309-103', { project_id: '221309-103', relation: '①', predecessor: '221309-101' }], ['221309-104', { project_id: '221309-104', relation: '②' }]]);
+    const bb = (id, fy, amt, stage = '当初予算') => ({ project_id: id, fy, stage, amount_yen: amt, verified: '確認済み' });
+    const m = matchedPair(PP, [bb('221309-101', 2025, 300), bb('221309-102', 2026, 200), bb('221309-103', 2026, 150), bb('221309-104', 2025, 50), bb('221309-104', 2026, 70, '補正後予算')], 2025, 2026, '当初予算');
+    t('前身の事業でつないだ事業は同じ事業として比べる（補正後予算は当初予算と混ぜない）', m.n === 1 && m.p === 300 && m.c === 350 && m.o0n === 1 && m.o0w === 50 && m.o1n === 0);
+  }
   const sumP = structuredClone(sum);
   sumP['221309'][2025]['当初予算'].st = '一部確認';
   t('一部確認の年度とは前年度比を出さない（一部確認も含める設定でも）', metric('yoy', { sum: sumP, code: '221309', fy: 2026, stage: '当初予算', pop: null, includePartial: true }) === null
