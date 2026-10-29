@@ -39,7 +39,7 @@ export function areaStyle(code, { mode, fy, stage, partial }) {
   if (v === null) return { fill: NONE };
   if (mode !== 'yoy' && v === 0) return { fill: '#ffffff' };
   const pal = mode === 'yoy' ? DIV : SEQ;
-  const partialHere = st === '一部確認' || (mode === 'yoy' && status(code, fy - 1, stage) === '一部確認');
+  const partialHere = st === '一部確認';
   return { fill: pal[binOf(mode, v)], pattern: partialHere ? 'partial' : null };
 }
 
@@ -54,9 +54,10 @@ export function mapLegend(mode, { fy, stage, partial }) {
   const pal = mode === 'yoy' ? DIV : SEQ;
   const items = m.bin.map((label, i) => ({ fill: pal[i], label }));
   if (mode !== 'yoy') items.push({ fill: '#fff', label: mode === 'ratio' ? '0%（関係する事業なし）' : '0円（関係する事業なし）' });
-  items.push({ fill: NONE, label: mode === 'ratio' ? '未調査・一般会計の総額が未確認など（0%ではありません）' : mode === 'yoy' ? '比べられる2年度分のデータがない' : '未調査など（0円ではありません）' });
-  if (partial) items.push({ cls: 'partial', label: '斜線：一部の資料だけ調査（確認できた分）' });
-  return legendHTML(`${m.long}（${fyFull(fy)}・${stage}）`, items, mode === 'perForeign' ? '外国人1人に支払われた金額ではありません。合計を外国人住民の数で割った目安です。' : mode === 'ratio' ? '分子は一般会計の事業だけ（特別会計・企業会計の事業は入れない）。分母はその自治体の一般会計の予算総額です。' : '');
+  items.push({ fill: NONE, label: mode === 'ratio' ? '未調査・一般会計の総額が未確認など（0%ではありません）' : mode === 'yoy' ? '比べられる2年度分のデータがない（未調査・一部の資料だけ調査など）' : '未調査など（0円ではありません）' });
+  if (partial && mode !== 'yoy') items.push({ cls: 'partial', label: '斜線：一部の資料だけ調査（確認できた分）' });
+  return legendHTML(`${m.long}（${fyFull(fy)}・${stage}）`, items, mode === 'perForeign' ? '外国人1人に支払われた金額ではありません。合計を外国人住民の数で割った目安です。' : mode === 'ratio' ? '分子は一般会計の事業だけ（特別会計・企業会計の事業は入れない）。分母はその自治体の一般会計の予算総額です。'
+    : mode === 'yoy' ? '前の年度と選んだ年度の両方を、主な資料で調査済みの自治体だけ色をつけます（一部の資料だけ調べた年度があると、調べた範囲の差で増減が大きく見えるため）。' : '');
 }
 
 export function findPage(ctx) {
@@ -136,7 +137,8 @@ export function findPage(ctx) {
     const v = metricOf(st.mode, m.code, st.fy, st.stage, st.partial);
     if (v !== null) return `${esc(MAP_MODES[st.mode].label)}：<b>${esc(MAP_MODES[st.mode].fmt(v))}</b>`;
     if (st.mode === 'ratio') { const r = ratioView(m.code, st.fy, st.stage); return `一般会計に占める割合：${esc(r.sub || r.text)}`; }
-    return esc(st.mode === 'yoy' ? '前年度と比べられるデータなし' : amountOrStatus(m.code, st.fy, st.stage).text);
+    if (st.mode === 'yoy') return esc([st.fy - 1, st.fy].some(y => status(m.code, y, st.stage) === '一部確認') ? '前年度と比べられません（一部の資料だけ調べた年度があるため）' : '前年度と比べられるデータなし');
+    return esc(amountOrStatus(m.code, st.fy, st.stage).text);
   };
   const tipOf = m => {
     const a = amountOrStatus(m.code, st.fy, st.stage);

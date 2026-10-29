@@ -61,6 +61,9 @@ export async function trendPage(ctx) {
 
   const main = $('#t-main');
   const ok = y => val(code, y, stage) !== null;
+  // 一部の資料だけ調べた年度は、調べた範囲の差で増減が大きく見えるので、ほかの年度と比べない（増減・事業の新設・廃止を出さない）
+  const part = y => status(code, y, stage) === '一部確認';
+  const cmp = y => ok(y) && !part(y);
   // 推移のグラフ（範囲の年度）
   const chartBox = document.createElement('div');
   chartBox.dataset.title = '推移';
@@ -86,11 +89,11 @@ export async function trendPage(ctx) {
   // 表：年度ごとの合計・分野・財源
   const cols = range;
   // dfmt：増減の書き方（円・件・人）。always：調査していない年度でも出す（外国人住民数）
-  const tableRow = (label, fn, fmt = yenExact, dfmt = diffYen, always = false) => `<tr><td>${label}</td>${cols.map(y => `<td class="num">${ok(y) || always ? esc(fmt(fn(y))) : `<small>${esc(stLabel(status(code, y, stage)))}</small>`}</td>`).join('')}${mode === 'two' ? `<td class="num">${(ok(a) && ok(b)) || always ? esc(dfmt(fn(b) - fn(a))) + (fn(a) ? `<br><small>${esc(pct((fn(b) - fn(a)) / fn(a)))}</small>` : '') : '—'}</td>` : ''}</tr>`;
+  const tableRow = (label, fn, fmt = yenExact, dfmt = diffYen, always = false) => `<tr><td>${label}</td>${cols.map(y => `<td class="num">${ok(y) || always ? esc(fmt(fn(y))) : `<small>${esc(stLabel(status(code, y, stage)))}</small>`}</td>`).join('')}${mode === 'two' ? `<td class="num">${(cmp(a) && cmp(b)) || always ? esc(dfmt(fn(b) - fn(a))) + (fn(a) ? `<br><small>${esc(pct((fn(b) - fn(a)) / fn(a)))}</small>` : '') : '—'}</td>` : ''}</tr>`;
   const diffN = u => n => `${n > 0 ? '+' : n < 0 ? '−' : '±'}${num(Math.abs(n))}${u}`;
   const fundKnown = cols.some(y => ok(y) && ['national', 'pref', 'national_pref', 'bond', 'other', 'general'].some(k => fundOf(y, k) > 0));
   main.insertAdjacentHTML('beforeend', `<h3>使い道ごとの増減・財源の変化</h3>
-    <div class="table-wrap"><table><thead><tr><th>項目</th>${cols.map(y => `<th class="num">${y}年度</th>`).join('')}${mode === 'two' ? '<th class="num">増減</th>' : ''}</tr></thead><tbody>
+    <div class="table-wrap"><table><thead><tr><th>項目</th>${cols.map(y => `<th class="num">${y}年度${ok(y) && part(y) ? '<br><small>一部の資料だけ調査</small>' : ''}</th>`).join('')}${mode === 'two' ? '<th class="num">増減</th>' : ''}</tr></thead><tbody>
       ${tableRow('<b>多文化共生関連予算の合計</b>', y => val(code, y, stage))}
       <tr><td>一般会計に占める割合</td>${cols.map(y => { const r = ratio(code, y, stage); return `<td class="num">${r.v !== null ? esc(ratioPct(r.v)) : '<small>未確認</small>'}</td>`; }).join('')}${mode === 'two' ? '<td class="num">—</td>' : ''}</tr>
       ${FIELDS.filter(f => cols.some(y => fieldOf(y, f))).map(f => tableRow(`使い道：${esc(fieldLabel(f))}`, y => fieldOf(y, f))).join('')}
@@ -103,6 +106,7 @@ export async function trendPage(ctx) {
       ${tableRow('合計に入れた事業の数', y => projsIn(y).size, n => `${n}件`, diffN('件'))}
       ${tableRow('外国人住民数（前年12月末）', y => popOf(code, y)?.foreign || 0, n => n ? `${num(n)}人` : '—', diffN('人'), true)}
     </tbody></table></div>
+    ${cols.some(y => ok(y) && part(y)) ? `<p class="small">「一部の資料だけ調査」の年度は、見つかって確かめられた事業だけの合計です。調べた範囲の差で増減が実際より大きく見えるので、${mode === 'two' ? 'この年度との増減は出していません。' : 'ほかの年度と単純に比べられません。'}</p>` : ''}
     <p class="small muted">財源は、その事業だけの内訳が資料にあるものだけを足しています。財源が分からない分は、自治体自身の負担として数えていません。外国人住民数と予算の増減に、直接の因果関係があるとは限りません。</p>`);
 
   // 事業の新設・廃止
@@ -110,6 +114,7 @@ export async function trendPage(ctx) {
   const pairs = mode === 'two' ? [[a, b]] : cols.slice(1).map((y, i) => [cols[i], y]);
   for (const [y0, y1] of pairs) {
     if (!ok(y0) || !ok(y1)) { changes.push(`<li><b>${y0}→${y1}年度</b>：どちらかの年度が未調査のため、新設・廃止は判断できません。</li>`); continue; }
+    if (part(y0) || part(y1)) { changes.push(`<li><b>${y0}→${y1}年度</b>：どちらかの年度が一部の資料だけ調べた年度のため、新設・廃止は判断できません。</li>`); continue; }
     const s0 = projsIn(y0), s1 = projsIn(y1);
     const add = [...s1].filter(id => !s0.has(id)), del = [...s0].filter(id => !s1.has(id));
     const name = id => { const p = P.get(id); const pred = p.predecessor && P.get(p.predecessor); return `${esc(p.name)}${pred ? `<small>（前身：${esc(pred.name)}）</small>` : ''}`; };

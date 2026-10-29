@@ -393,10 +393,13 @@ export async function muniPage(ctx, code) {
     const hasRevised = D.budgets.some(b => b.stage === '補正後予算');
     const stages = hasRevised ? ['当初予算', '補正後予算', '決算'] : ['当初予算', '決算'];
     const v0 = val(fy - 1, stage), v1 = val(fy, stage);
-    const partialYoy = [status(code, fy - 1, stage), status(code, fy, stage)].includes('一部確認');
+    // 一部の資料だけ調べた年度があるときは、調べた範囲の差で増減が大きく見えるので、増減の金額と率を出さない
+    const partialYrs = [fy - 1, fy].filter(y => status(code, y, stage) === '一部確認');
     const box = $('#yr-box');
-    box.innerHTML = `<p class="yoy">${v0 !== null && v1 !== null && v0 > 0
-      ? `${fy - 1}年度の${stage} <b>${esc(yen(v0))}</b> → ${fy}年度 <b>${esc(yen(v1))}</b>：<b class="${v1 >= v0 ? 'up' : 'down'}">${esc(diffYen(v1 - v0))}（${esc(pct((v1 - v0) / v0))}）</b>${partialYoy ? '<br><small>一部の資料だけ調べた年度を含むので、増減は調べた範囲の差の影響も受けます。</small>' : ''}`
+    box.innerHTML = `<p class="yoy">${partialYrs.length && v0 !== null && v1 !== null
+      ? `${partialYrs.map(y => `${y}年度`).join('と')}の${stage}は「${esc(stLabel('一部確認'))}」（見つかって確かめられた事業だけを登録）のため、前の年度と比べられません。調べた範囲の差で、増減が実際より大きく見えてしまうためです。`
+      : v0 !== null && v1 !== null && v0 > 0
+      ? `${fy - 1}年度の${stage} <b>${esc(yen(v0))}</b> → ${fy}年度 <b>${esc(yen(v1))}</b>：<b class="${v1 >= v0 ? 'up' : 'down'}">${esc(diffYen(v1 - v0))}（${esc(pct((v1 - v0) / v0))}）</b>`
       : `${fy - 1}年度の${stage}は「${esc(missing(fy - 1, stage))}」のため、前の年度と比べられません。`}</p>
       <div class="seg seg-sm" role="group" aria-label="グラフの指標"><button type="button" data-tm="amt" aria-pressed="true">予算額</button><button type="button" data-tm="ratio" aria-pressed="false">一般会計に占める割合</button></div>
       <div id="ch-yr-wrap"></div><div id="tb-yr"></div>`;

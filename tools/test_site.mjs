@@ -178,6 +178,10 @@ const has = (ck, level, re) => ck.issues.some(i => i.level === level && re.test(
   t('今年度の決算は決算未公表', statusOf(sum, '220001', 2026, '決算', 2025) === '決算未公表');
   t('未調査は値なし（0円にしない）', valueOf(null) === null);
   t('前年度比', Math.abs(metric('yoy', { sum, code: '221309', fy: 2026, stage: '当初予算', pop: null }) - (31000000 - 8000000) / 8000000) < 1e-9);
+  const sumP = structuredClone(sum);
+  sumP['221309'][2025]['当初予算'].st = '一部確認';
+  t('一部確認の年度とは前年度比を出さない（一部確認も含める設定でも）', metric('yoy', { sum: sumP, code: '221309', fy: 2026, stage: '当初予算', pop: null, includePartial: true }) === null
+    && metric('total', { sum: sumP, code: '221309', fy: 2025, stage: '当初予算', pop: null, includePartial: true }) === 8000000);
   t('外国人住民1人当たり', metric('perForeign', { sum, code: '221309', fy: 2026, stage: '当初予算', pop: { foreign: 1000, population: 100000 } }) === 31000);
 
   // 「この金額はどう計算した？」の内訳

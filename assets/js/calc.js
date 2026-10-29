@@ -147,6 +147,9 @@ export function valueOf(c) {
   return c.a;
 }
 
+// 前の年度との増減に使える集計か（主な資料を調査済み、または関係する事業なし）
+export const comparableYoy = c => !!c && (c.st === '確認済み' || c.st === '該当事業なし');
+
 // 指標の計算。pop は {population, foreign}（年度ごと）、gen は一般会計の予算総額の表（generalTotals の結果）
 export function metric(mode, { sum, code, fy, stage, pop, includePartial, gen }) {
   const c = cellOf(sum, code, fy, stage);
@@ -156,12 +159,14 @@ export function metric(mode, { sum, code, fy, stage, pop, includePartial, gen })
   if (mode === 'ratio') return ok ? ratioOf(c, gen?.[code]?.[fy]?.[stage]).v : null;
   if (mode === 'perForeign') return v !== null && pop?.foreign ? v / pop.foreign : null;
   if (mode === 'perCapita') return v !== null && pop?.population ? v / pop.population : null;
+  // 増減は、両方の年度を主な資料で調査済みのときだけ出す。一部の資料だけ調べた年度があると、調べた範囲の差で増減が大きく見えるので、
+  // includePartial（一部の資料だけ調べた自治体も含める）のときも比べない
   if (mode === 'yoy') {
     const p = cellOf(sum, code, fy - 1, stage);
-    const okp = p && (p.st === '確認済み' || p.st === '該当事業なし' || (includePartial && p.st === '一部確認'));
-    const pv = okp ? valueOf(p) : null;
-    if (v === null || pv === null || pv === 0) return null;
-    return (v - pv) / pv;
+    if (!comparableYoy(c) || !comparableYoy(p)) return null;
+    const v1 = valueOf(c), pv = valueOf(p);
+    if (v1 === null || pv === null || pv === 0) return null;
+    return (v1 - pv) / pv;
   }
   return null;
 }
