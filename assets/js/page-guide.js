@@ -78,7 +78,7 @@ function step4(fy) {
     <ul class="g-bars">${top.map(x => `<li><a href="${href('/m/' + x.m.code, { y: fy })}">${esc(x.m.name)}<small>${esc(x.m.pref)}</small></a><span class="g-bar"><i style="width:${Math.max(3, x.v / max * 100).toFixed(1)}%"></i></span><b>${esc(ratioPct(x.v))}</b></li>`).join('')}
       <li class="g-mid"><span>まん中の自治体<small>${num(rows.length)}市区町村の中央値</small></span><span class="g-bar"><i style="width:${Math.max(1, mid / max * 100).toFixed(1)}%"></i></span><b>${esc(ratioPct(mid))}</b></li></ul>
     <p class="fig-cap">「${esc(stLabel('確認済み'))}」で、一般会計の予算総額を確かめた市区町村だけ。外国人住民の多さ・事業の進め方・資料の詳しさで、数字は大きく変わります。</p>
-    <p><a class="btn btn-outline" href="${href('/ranking', { y: fy, k: 'ratio' })}">ランキングで全部を見る</a></p>`,
+    <p><a class="btn btn-outline" href="${href('/ranking', { y: fy, k: 'ratio', lv: 'muni', pt: '0' })}">ランキングで全部を見る</a></p>`,
     `<p>一般会計に占める割合は、確認できた多文化共生関連予算のうち一般会計の事業の金額を、その自治体の一般会計の当初予算の総額で割ったものです（同じ年度・同じ自治体どうし）。特別会計・企業会計の事業は入れません。</p>`);
 }
 

@@ -71,11 +71,12 @@ export async function rankingPage(ctx) {
   await loadPopulation();
   const st = {
     kind: RANK_KINDS[params.get('k')] ? params.get('k') : 'high',
-    level: params.get('lv') === 'pref' ? 'pref' : 'muni',
-    fy: currentYear(params), stage: currentStage(params), partial: params.get('pt') === '1',
+    // 最初は「都道府県」「一部の資料だけ調べた自治体も含める」
+    level: params.get('lv') === 'muni' ? 'muni' : 'pref',
+    fy: currentYear(params), stage: currentStage(params), partial: params.get('pt') !== '0',
     all: params.get('all') === '1',
   };
-  const save = () => history.replaceState(null, '', href('/ranking', { k: st.kind === 'high' ? '' : st.kind, lv: st.level === 'muni' ? '' : st.level, y: st.fy, s: st.stage === '決算' ? '決算' : '', pt: st.partial ? '1' : '', all: st.all ? '1' : '' }));
+  const save = () => history.replaceState(null, '', href('/ranking', { k: st.kind === 'high' ? '' : st.kind, lv: st.level === 'pref' ? '' : st.level, y: st.fy, s: st.stage === '決算' ? '決算' : '', pt: st.partial ? '' : '0', all: st.all ? '1' : '' }));
   const draw = () => {
     save();
     const rows = rankRows(st);
