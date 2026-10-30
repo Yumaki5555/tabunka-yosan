@@ -58,6 +58,11 @@ p { margin: 0 0 1em; }
 
 /* ---------- ヘッダー・メニュー（主なメニューは4つ） ---------- */
 .site-header { background: #fff; border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 30; }
+/* ページ上の帯：調査がまだ途中であること（都道府県だけ調べ終わり、市区町村はこれから）を全ページに出す */
+.site-notice { background: var(--warn-soft); border-bottom: 2px solid #e0a43a; }
+.site-notice p { margin: 0; padding-top: 10px; padding-bottom: 10px; font-size: .97rem; line-height: 1.7; }
+.site-notice b:first-child { color: var(--warn); margin-right: .4em; }
+.site-notice a { margin-left: .4em; font-weight: bold; white-space: nowrap; }
 .header-inner { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 8px; padding-bottom: 8px; }
 .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text); min-width: 0; }
 .brand-mark { flex: none; width: 40px; height: 40px; border-radius: 11px; background: var(--green); display: grid; place-items: center; }

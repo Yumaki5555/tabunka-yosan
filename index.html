@@ -19,7 +19,7 @@
 <link rel="icon" href="assets/img/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
-<link rel="stylesheet" href="assets/css/style.css?v=202610300520">
+<link rel="stylesheet" href="assets/css/style.css?v=202610301830">
 </head>
 <body>
 <a class="skip" href="#app">本文へ移動</a>
@@ -61,6 +61,9 @@
     </div>
   </div>
 </header>
+<div class="site-notice" role="note">
+  <p class="wrap"><b>調査はまだ途中です。</b>いまひととおり調べたのは<b>47都道府県だけ</b>です。<b>市区町村はまだまだこれから</b>で、調べたのは全国1,741のうち<span id="notice-muni">ごく一部</span>です。市区町村の金額や比較は、調べた一部の自治体だけのものとしてご覧ください。<a href="#/status">調査状況を見る</a></p>
+</div>
 
 <main id="app" class="wrap" tabindex="-1">
   <p class="loading">データを読み込んでいます…</p>
@@ -84,36 +87,36 @@
 <script type="importmap">
 {
  "imports": {
-  "./assets/js/app.js": "./assets/js/app.js?v=202610300520",
-  "./assets/js/calc.js": "./assets/js/calc.js?v=202610300520",
-  "./assets/js/charts.js": "./assets/js/charts.js?v=202610300520",
-  "./assets/js/components.js": "./assets/js/components.js?v=202610300520",
-  "./assets/js/csv.js": "./assets/js/csv.js?v=202610300520",
-  "./assets/js/export.js": "./assets/js/export.js?v=202610300520",
-  "./assets/js/icons.js": "./assets/js/icons.js?v=202610300520",
-  "./assets/js/illust.js": "./assets/js/illust.js?v=202610300520",
-  "./assets/js/map.js": "./assets/js/map.js?v=202610300520",
-  "./assets/js/page-about.js": "./assets/js/page-about.js?v=202610300520",
-  "./assets/js/page-compare.js": "./assets/js/page-compare.js?v=202610300520",
-  "./assets/js/page-data.js": "./assets/js/page-data.js?v=202610300520",
-  "./assets/js/page-find.js": "./assets/js/page-find.js?v=202610300520",
-  "./assets/js/page-guide.js": "./assets/js/page-guide.js?v=202610300520",
-  "./assets/js/page-home.js": "./assets/js/page-home.js?v=202610300520",
-  "./assets/js/page-muni.js": "./assets/js/page-muni.js?v=202610300520",
-  "./assets/js/page-national.js": "./assets/js/page-national.js?v=202610300520",
-  "./assets/js/page-ranking.js": "./assets/js/page-ranking.js?v=202610300520",
-  "./assets/js/page-search.js": "./assets/js/page-search.js?v=202610300520",
-  "./assets/js/page-status.js": "./assets/js/page-status.js?v=202610300520",
-  "./assets/js/page-trend.js": "./assets/js/page-trend.js?v=202610300520",
-  "./assets/js/schema.js": "./assets/js/schema.js?v=202610300520",
-  "./assets/js/store.js": "./assets/js/store.js?v=202610300520",
-  "./assets/js/uses.js": "./assets/js/uses.js?v=202610300520",
-  "./assets/js/util.js": "./assets/js/util.js?v=202610300520",
-  "./assets/js/validate.js": "./assets/js/validate.js?v=202610300520"
+  "./assets/js/app.js": "./assets/js/app.js?v=202610301830",
+  "./assets/js/calc.js": "./assets/js/calc.js?v=202610301830",
+  "./assets/js/charts.js": "./assets/js/charts.js?v=202610301830",
+  "./assets/js/components.js": "./assets/js/components.js?v=202610301830",
+  "./assets/js/csv.js": "./assets/js/csv.js?v=202610301830",
+  "./assets/js/export.js": "./assets/js/export.js?v=202610301830",
+  "./assets/js/icons.js": "./assets/js/icons.js?v=202610301830",
+  "./assets/js/illust.js": "./assets/js/illust.js?v=202610301830",
+  "./assets/js/map.js": "./assets/js/map.js?v=202610301830",
+  "./assets/js/page-about.js": "./assets/js/page-about.js?v=202610301830",
+  "./assets/js/page-compare.js": "./assets/js/page-compare.js?v=202610301830",
+  "./assets/js/page-data.js": "./assets/js/page-data.js?v=202610301830",
+  "./assets/js/page-find.js": "./assets/js/page-find.js?v=202610301830",
+  "./assets/js/page-guide.js": "./assets/js/page-guide.js?v=202610301830",
+  "./assets/js/page-home.js": "./assets/js/page-home.js?v=202610301830",
+  "./assets/js/page-muni.js": "./assets/js/page-muni.js?v=202610301830",
+  "./assets/js/page-national.js": "./assets/js/page-national.js?v=202610301830",
+  "./assets/js/page-ranking.js": "./assets/js/page-ranking.js?v=202610301830",
+  "./assets/js/page-search.js": "./assets/js/page-search.js?v=202610301830",
+  "./assets/js/page-status.js": "./assets/js/page-status.js?v=202610301830",
+  "./assets/js/page-trend.js": "./assets/js/page-trend.js?v=202610301830",
+  "./assets/js/schema.js": "./assets/js/schema.js?v=202610301830",
+  "./assets/js/store.js": "./assets/js/store.js?v=202610301830",
+  "./assets/js/uses.js": "./assets/js/uses.js?v=202610301830",
+  "./assets/js/util.js": "./assets/js/util.js?v=202610301830",
+  "./assets/js/validate.js": "./assets/js/validate.js?v=202610301830"
  }
 }
 </script>
-<script type="module" src="assets/js/app.js?v=202610300520"></script>
+<script type="module" src="assets/js/app.js?v=202610301830"></script>
 <!-- version:end -->
 </body>
 </html>

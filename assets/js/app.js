@@ -197,6 +197,11 @@ async function start() {
   }
   const g = db.meta?.generated;
   $('#footer-updated').textContent = g ? `データの更新：${g.replace(/^(\d{4})-(\d{2})-(\d{2}).*/, (m, y, mo, d) => `${y}年${Number(mo)}月${Number(d)}日`)}` : '';
+  // ページ上の帯「調査はまだ途中です」：いちばん新しい年度で調べた市区町村の数を入れる
+  const prog = db.meta?.progress || {};
+  const lastFy = Object.keys(prog).sort().pop();
+  const muniDone = Object.entries(prog[lastFy]?.muni || {}).filter(([k]) => k !== '未調査').reduce((s, [, v]) => s + v, 0);
+  if (muniDone) $('#notice-muni').textContent = `${muniDone.toLocaleString('ja-JP')}だけ`;
   window.addEventListener('hashchange', render);
   render();
 }
