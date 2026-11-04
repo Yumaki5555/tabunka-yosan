@@ -324,6 +324,15 @@ export async function muniPage(ctx, code) {
       ${refProjects.length ? `<details class="grp"${refProjects.some(x => x.project_id === openPj) ? ' open' : ''}><summary>参考：合計に入れていない関連事業・対象外（${refProjects.length}件）</summary><p class="small muted">国際交流協会の運営補助・姉妹都市交流など、外国人住民などへの支出として金額を特定できない事業や、対象外と判断した事業です。</p><div class="proj-list">${byAmt(refProjects).map(pj => projHTML(pj, amtLine(pj, fy, stage))).join('')}</div></details>` : ''}
       ${bkProjects.length ? `<details class="grp"${bkProjects.some(x => x.project_id === openPj) ? ' open' : ''}><summary>別枠：${esc(bkGroups.map(g => g.label).join('・'))}（${bkProjects.length}件・合計に入れていない）</summary><p class="small muted">${esc(R['別枠'].desc)}</p><div class="proj-list">${byAmt(bkProjects).map(pj => projHTML(pj, amtLine(pj, fy, stage))).join('')}</div></details>` : ''}`;
   }
+  // 「声を届ける。」へ（戻り先に、この事業を開いた状態のURLを渡す）。
+  // 窓口検索は自治体コードで地域を選んだ状態で開く。コードを照合できないときは、向こうの画面で利用者に選んでもらう
+  function askHTML(pj) {
+    const back = location.origin + location.pathname + href('/m/' + code, { y: fy, s: sQ(stage), us: usQ(), pj: pj.project_id });
+    const item = String(pj.name).slice(0, 60);
+    const ask = new URLSearchParams({ tab: 'area', code, from: back, item });
+    const doc = new URLSearchParams({ from: back, item });
+    return `<p class="btn-row"><a class="btn btn-outline btn-small" href="../todokeru/#/contacts?${esc(ask.toString())}">この予算について問い合わせる</a><a class="btn btn-outline btn-small" href="../todokeru/#/guide/disclosure?${esc(doc.toString())}">資料を詳しく確認したい</a></p>`;
+  }
   function projHTML(pj, a) {
     const bs = D.budgets.filter(b => b.project_id === pj.project_id).sort((x, y) => y.fy - x.fy || x.stage.localeCompare(y.stage));
     const recs = D.recipients.filter(r => r.project_id === pj.project_id);
@@ -356,6 +365,7 @@ export async function muniPage(ctx, code) {
         ${recs.length ? `<h4>補助金・委託金の支払先</h4><div class="table-wrap"><table><thead><tr><th>年度</th><th>支払先</th><th>種類</th><th class="num">金額</th><th>出典</th></tr></thead><tbody>${recs.map(r => `<tr><td>${r.fy}年度 ${esc(r.stage)}</td><td>${esc(r.recipient)}<br><small>${esc(r.recipient_type)}${r.recipient_type === '市区町村' ? '（自治体間の資金移転）' : ''}</small></td><td>${esc(r.kind)}</td><td class="num">${r.amount_yen !== undefined ? esc(yen(r.amount_yen)) : '金額の記載なし'}</td><td><small>${sourceLink(src.get(r.source_id), r.page)}</small>${r.quote ? `<div class="quote">${esc(r.quote)}</div>` : ''}</td></tr>`).join('')}</tbody></table></div>` : ''}
         ${pj.mou_ids ? `<p class="small">関連する可能性のある協定：${pj.mou_ids.split(/[;；]/).map(id => `<a href="https://yumaki5555.github.io/mou-map/#/mou/${encodeURIComponent(id.trim())}" target="_blank" rel="noopener">${esc(id.trim())}</a>`).join('・')}（MOUマップ。協定があることだけで費用が発生したとは扱っていません）</p>` : ''}
         ${pj.note ? `<p class="small muted">備考：${esc(pj.note)}</p>` : ''}
+        ${askHTML(pj)}
         <p class="small muted"><a href="${href('/m/' + code, { y: fy, s: sQ(stage), pj: pj.project_id })}">この事業へのリンク</a></p>
       </div></details>`;
   }
