@@ -93,7 +93,9 @@ def xlsx_text(fp, page_field):
         XLSX[fp] = openpyxl.load_workbook(fp, read_only=True, data_only=True)
     wb = XLSX[fp]
     m = re.search(r"「(.+?)」\s*シート", s)
-    ws = wb[m.group(1)] if m and m.group(1) in wb.sheetnames else wb.worksheets[0]
+    # 掲載ページは全角を半角にそろえたあとなので、シート名も同じようにそろえて探す（「2026年度（歳出）」など）
+    name = next((n for n in wb.sheetnames if m and unicodedata.normalize("NFKC", n) == m.group(1)), None)
+    ws = wb[name] if name else wb.worksheets[0]
     cells = []
     for n in rows:
         for row in ws.iter_rows(min_row=n, max_row=n, values_only=True):
