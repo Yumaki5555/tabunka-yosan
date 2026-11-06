@@ -7,7 +7,7 @@
 import { db, loadDetail, loadPopulation, popOf, status, cell, munisOfPref, ratio, generalOf } from './store.js';
 import { $, $$, esc, yen, yenExact, yenPer, pct, num, diffYen, fyFull, fmtDate, download, copyText, toast, ratioPct, yenShort } from './util.js';
 import { href, currentYear, currentStage, yearPicker, bindYearPicker } from './app.js';
-import { statusBadge, stLabel, relBadge, relName, fieldBadge, fieldLabel, sourceLink, sourceMeta, amountOrStatus, ratioView, scopeNoteHTML } from './components.js';
+import { statusBadge, stLabel, relBadge, relName, fieldBadge, fieldLabel, sourceLink, sourceMeta, amountOrStatus, amountLabel, keywordBox, bindKeywordBox, ratioView, scopeNoteHTML } from './components.js';
 import { columnChart, lineChart, stackChart, COLORS } from './charts.js';
 import { FUND_KEYS, FUND_LABELS, COUNTED, breakdown, fieldTotals, valueOf } from './calc.js';
 import { renderUses, coverageHTML, singleCoverageHTML, overlapHTML, breakdownItems } from './uses.js';
@@ -125,6 +125,8 @@ export async function muniPage(ctx, code) {
     ${!checking && (bd.inc.length || bd.pend.length || nRef || bd.ex.length || bd.bk.length) ? `<p class="kpi-how"><a href="${href('/m/' + code, { y: fy, s: sQ(stage), to: 'method' })}" id="calc-link">この金額はどう計算した？</a></p>` : ''}
   </section>
 
+  ${m.isPref || D.projects.length ? `<div class="kw-inline" id="muni-kw">${keywordBox({ id: 'muni-kw-q', title: m.isPref ? `${m.name}内の事業をキーワードで探す（庁と市区町村）` : `${m.name}の事業をキーワードで探す`, placeholder: '例：法律相談、日本語教室、通訳', fy })}</div>` : ''}
+
   <section class="section" id="uses" aria-labelledby="use-h"><h2 id="use-h" class="sec-h">${stage === '決算' ? '何に使った？' : '何に使う？'}<small>使い道（10分類）</small></h2>
     ${m.isPref ? `<div class="ctl"><span class="label">集計の範囲</span><div class="seg seg-sm" role="group" aria-label="集計の範囲">${Object.entries(useScopes).map(([k, t]) => `<button type="button" data-us="${k}" aria-pressed="${useScope === k}">${esc(t)}</button>`).join('')}</div></div>` : ''}
     <div id="use-box"></div></section>
@@ -174,6 +176,7 @@ export async function muniPage(ctx, code) {
   };
   pjBtn.addEventListener('click', () => showProjects(pjPanel.hidden, true));
   if (openPj) showProjects(true, false);
+  if ($('#muni-kw')) bindKeywordBox($('#muni-kw'), () => (m.isPref ? { p: m.pc } : { m: code }), fy);
 
   // 「さらに詳しく調べる」は、開いたときに中身を作る（グラフは見える大きさが分かってから描く）
   const lazy = (id, fn) => {
@@ -306,15 +309,7 @@ export async function muniPage(ctx, code) {
   const amtLine = (pj, y, s) => {
     const b = budBy.get(`${pj.project_id}|${y}|${s}`);
     if (!b) return { main: '記録なし', sub: `${y}年度の${s}の金額の記録なし` };
-    if (b.verified === '要確認') return { main: yen(b.amount_yen), sub: '確認中（合計に入れていない）' };
-    if (pj.included_in) return { main: yen(b.amount_yen), sub: '別の事業の金額に含まれる再掲（足していない）' };
-    if (pj.relation === '①' || pj.relation === '②') return { main: yen(b.amount_yen), sub: '合計に入れています（全額）' };
-    if (pj.relation === '③') return b.portion_yen !== null && b.portion_yen !== undefined
-      ? { main: yen(b.portion_yen), sub: `外国人関連の部分だけ合計に（事業全体 ${yen(b.amount_yen)}）` } : { main: '関連部分は不明', sub: `事業全体 ${yen(b.amount_yen)}（足していない）` };
-    if (pj.relation === '⑤') return { main: yen(b.amount_yen), sub: '対象外（合計に入れていない）' };
-    if (pj.relation === '保留') return { main: yen(b.amount_yen), sub: '判定保留（合計に入れていない）' };
-    if (pj.relation === '別枠') return { main: yen(b.amount_yen), sub: '別枠（合計に入れていない）' };
-    return { main: yen(b.amount_yen), sub: '参考（合計に入れていない）' };
+    return amountLabel(pj, b);
   };
   const byAmt = list => [...list].sort((a, b) => (budBy.get(`${b.project_id}|${fy}|${stage}`)?.amount_yen ?? -1) - (budBy.get(`${a.project_id}|${fy}|${stage}`)?.amount_yen ?? -1));
   const refProjects = D.projects.filter(x => !['①', '②', '③', '別枠'].includes(x.relation));

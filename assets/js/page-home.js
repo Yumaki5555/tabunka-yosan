@@ -5,7 +5,8 @@
 import { db, loadProjectsIndex } from './store.js';
 import { $, esc, num, fyFull, normQ } from './util.js';
 import { href, go, currentYear } from './app.js';
-import { muniPicker } from './components.js';
+import { muniPicker, keywordBox, bindKeywordBox } from './components.js';
+import { EXAMPLES } from './search.js';
 import { ICON } from './icons.js';
 import { ILLUST } from './illust.js';
 import { COLORS } from './charts.js';
@@ -41,6 +42,11 @@ export function homePage(ctx) {
       <span class="hero3-go" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12h13M12 5l7 7-7 7"/></svg></span>
     </a>
 
+    <section class="hcard kw-home" id="kw" aria-labelledby="kw-h">
+      <div class="hcard-head"><span class="hcard-ic">${ICON.search}</span><h2 id="kw-h">事業・キーワードで探す</h2><p>チラシの行事や施設の名前から、どの事業で、いくらかかっているかを探せます。</p></div>
+      ${keywordBox({ id: 'home-kw', title: '事業名・キーワード', examples: EXAMPLES, fy, hideTitle: true })}
+    </section>
+
     <div class="home-cols">
       <section class="hcard" id="find" aria-labelledby="find-h">
         <div class="hcard-head"><span class="hcard-ic">${ICON.search}</span><h2 id="find-h">自治体で調べる</h2><p>自治体ごとの多文化共生関連予算を確認できます。</p></div>
@@ -72,13 +78,15 @@ export function homePage(ctx) {
     <section class="more" aria-labelledby="more-h">
       <h2 id="more-h" class="sec-h">詳しい情報・資料</h2>
       <ul class="more-links">
-        <li><a href="#/search">${ICON.search}<span>事業検索<small>事業名・使い道・都道府県で探す</small></span></a></li>
+        <li><a href="#/search">${ICON.search}<span>事業・キーワードで探す<small>事業名・使い道・地域でしぼって探す</small></span></a></li>
         <li><a href="#/about?to=method">${ICON.book}<span>調査方法<small>何を・どの資料で調べたか</small></span></a></li>
         <li><a href="#/about?to=src-rule">${ICON.doc}<span>出典・公式資料<small>出典の決まり。資料は各自治体のページに</small></span></a></li>
         <li><a href="#/changes">${ICON.history}<span>更新履歴<small>データの追加・訂正の記録</small></span></a></li>
       </ul>
     </section>
   </div>`;
+
+  bindKeywordBox($('#kw'), () => ({}), fy);
 
   // ---------- 自治体名で探す（候補に事業名も出す。事業の一覧は欄を使い始めたときに読む） ----------
   const projIdx = { list: null, loading: false };

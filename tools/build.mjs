@@ -174,6 +174,27 @@ for (const f of fs.readdirSync(DETAIL)) if (!byPref[f.replace(/\.json$/, '')]) f
 // 事業名の検索用の索引
 writeJSON(path.join(DIST, 'projects-index.json'), d.projects.map(p => [p.project_id, p.code, p.name, p.field, p.relation, p.department || '']));
 
+// 事業名・キーワードで探すための索引（検索のページを開いたときだけ読む）。自治体のページに出ている言葉と金額だけを入れる。
+// rows = [[事業ID, 自治体コード, 事業名, 使い道, 分類, 担当部署, 事業目的, 事業内容, その他の言葉（対象者の説明・年度ごとの事業名・資料の記載・支払先）, 再掲なら1, [[年度, 段階, 金額, うち外国人関連, 要確認なら1], …]], …]
+{
+  const budsOf = new Map(), wordsOf = new Map();
+  const addWord = (id, s) => { if (s) { if (!wordsOf.has(id)) wordsOf.set(id, new Set()); wordsOf.get(id).add(String(s).trim()); } };
+  for (const b of d.budgets) {
+    if (!budsOf.has(b.project_id)) budsOf.set(b.project_id, []);
+    budsOf.get(b.project_id).push([b.fy, b.stage, b.amount_yen, b.portion_yen ?? null, b.verified === '要確認' ? 1 : 0]);
+    addWord(b.project_id, b.name_in_year);
+    addWord(b.project_id, b.quote);
+  }
+  for (const r of d.recipients) addWord(r.project_id, r.recipient);
+  writeJSON(path.join(DIST, 'search.json'), {
+    generated: stamp,
+    rows: d.projects.map(p => {
+      addWord(p.project_id, p.target_note);
+      return [p.project_id, p.code, p.name, p.field, p.relation, p.department || '', p.purpose || '', p.content || '', [...(wordsOf.get(p.project_id) || [])].join(' / '), p.included_in ? 1 : 0, budsOf.get(p.project_id) || []];
+    }),
+  });
+}
+
 // 使い道の円グラフで分類を押したときの、全国の事業の一覧（押したときだけ読む）。
 // rows["2026|当初予算"] = [[自治体コード, 事業ID, 事業名, 使い道, 数えた金額, 分類, 出典ID, 掲載ページ], …]、src[出典ID] = [資料名, URL]
 writeJSON(path.join(DIST, 'uses.json'), { generated: stamp, rows: uses, src: usesSrc });

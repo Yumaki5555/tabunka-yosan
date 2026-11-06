@@ -8,6 +8,7 @@ import { Checker, rawToYen } from '../assets/js/validate.js';
 import { aggregate, statusOf, valueOf, metric, breakdown, fundCoverage, fieldTotals, fieldShares, ratioOf, generalTotals, matchedPair } from '../assets/js/calc.js';
 import { parseCSV, toCSV, csvToObjects } from '../assets/js/csv.js';
 import { detectTable, TABLES } from '../assets/js/schema.js';
+import { buildIndex, readQuery, searchRows, pickBudget, markHTML, snippetHTML } from '../assets/js/search.js';
 
 let ok = 0, ng = 0;
 const t = (name, cond) => { if (cond) ok++; else { ng++; console.log('  失敗：' + name); } };
@@ -20,6 +21,40 @@ t('億のあとが単位の数', rawToYen('1億5,030', '万円') === 150300000);
 t('百万円', rawToYen('352', '百万円') === 352000000);
 t('全角数字', rawToYen('１２，３４５', '千円') === 12345000);
 t('読めない', rawToYen('不明', '千円') === null);
+
+// ---------- 事業名・キーワードで探す ----------
+{
+  const munis = [
+    { code: '141003', name: '横浜市', full: '神奈川県横浜市', kana: 'よこはまし' },
+    { code: '140007', name: '神奈川県', full: '神奈川県', kana: 'かながわけん' },
+    { code: '221309', name: '浜松市', full: '静岡県浜松市', kana: 'はままつし' },
+  ];
+  const row = (id, code, name, field, rel, content, extra, buds) => [id, code, name, field, rel, '', '', content, extra, 0, buds];
+  const idx = buildIndex([
+    row('141003-001', '141003', '外国人材受入・共生推進事業', '外国人相談', '②', '多文化共生総合相談センター等での多言語相談', '', [[2025, '当初予算', 100, null, 0], [2026, '当初予算', 172788000, null, 0]]),
+    row('141003-002', '141003', '日本語教室補助', '日本語教育', '①', '地域の日本語教室', 'YOKE', [[2025, '決算', 50, null, 0]]),
+    row('221309-001', '221309', '外国人法律相談事業', '外国人相談', '②', '弁護士による法律相談', '', [[2026, '当初予算', 300000, null, 0]]),
+    row('140007-001', '140007', '通訳派遣', '生活支援', '②', 'ワンストップ窓口へ通訳を派遣', '', []),
+  ], munis);
+  const ids = (q, opt) => { const r = searchRows(idx, readQuery(q, idx), opt); return { exact: r.exact.map(x => x.row.id), near: r.near.map(x => x.row.id) }; };
+  const labels = q => readQuery(q, idx).words.map(w => w.label).join('|');
+  t('検索：事業名', ids('法律相談').exact.join() === '221309-001');
+  t('検索：事業の内容の言葉', ids('多文化共生総合相談センター').exact.join() === '141003-001');
+  t('検索：言葉はすべて満たす', ids('浜松 通訳').exact.length === 0 && ids('神奈川 通訳').exact.join() === '140007-001');
+  t('検索：支払先の名前（大文字小文字を問わない）', ids('yoke').exact.join() === '141003-002');
+  t('検索：カタカナとひらがな・全角半角を問わない', ids('わんすとっぷ').exact.join() === '140007-001' && ids('ﾜﾝｽﾄｯﾌﾟ').exact.join() === '140007-001');
+  t('検索：チラシの題名から言葉を取り出す', labels('2026 外国人のための無料法律相談会') === '法律相談');
+  t('検索：自治体名＋施設名を分ける', labels('横浜市多文化共生総合相談センター') === '横浜市|多文化共生総合相談センター' && ids('横浜市多文化共生総合相談センター').exact.join() === '141003-001');
+  const yk = ids('横浜 法律相談');
+  t('検索：そのまま載っていなければ近い言葉で（自治体名は広げない）', yk.exact.length === 0 && yk.near.join() === '141003-001');
+  t('検索：近い言葉のない言葉は広げない', ids('横浜 フラダンス').near.length === 0);
+  t('検索：範囲でしぼる', ids('相談', { filter: r => r.code === '221309' }).exact.join() === '221309-001');
+  t('検索：金額の大きい順', ids('相談', { sort: 'amt', fy: 2026 }).exact[0] === '141003-001');
+  t('検索：選んだ年度の金額', pickBudget(idx.rows[0].buds, 2025).amount_yen === 100 && pickBudget(idx.rows[0].buds, 2026).amount_yen === 172788000);
+  t('検索：年度がなければ新しい記録', pickBudget(idx.rows[0].buds, 2030).fy === 2026 && pickBudget(idx.rows[1].buds, 2026).stage === '決算' && pickBudget([], 2026) === null);
+  t('検索：印をつける・文字をエスケープする', markHTML('<ﾜﾝｽﾄｯﾌﾟ>窓口', ['わんすとっぷ']) === '&lt;<mark>ﾜﾝｽﾄｯﾌﾟ</mark>&gt;窓口');
+  t('検索：言葉のまわりを抜き出す', snippetHTML(idx.rows[0], ['多言語相談']).includes('<mark>多言語相談</mark>'));
+}
 
 // ---------- CSV ----------
 const csv = toCSV(['a', 'b'], [['x,y', '改行\nあり'], ['"引用"', '']]);

@@ -5,7 +5,7 @@ import { db, loadGeo, loadPopulation, munisOfPref, status, cell, metricOf } from
 import { $, $$, esc, yen, yenPer, pct, num, fyFull, ratioPct } from './util.js';
 import { href, currentYear, currentStage, yearPicker, bindYearPicker, stageSeg } from './app.js';
 import { drawMap, legendHTML } from './map.js';
-import { statusBadge, stLabel, prefButtons, amountOrStatus, statusLegendNote, ratioView } from './components.js';
+import { statusBadge, stLabel, prefButtons, amountOrStatus, statusLegendNote, ratioView, keywordBox, bindKeywordBox } from './components.js';
 import { ICON } from './icons.js';
 import { valueOf } from './calc.js';
 
@@ -80,6 +80,7 @@ export function findPage(ctx) {
     <h1>地図・都道府県から探す</h1>
     <p class="lead">自治体名で探すときは、<a href="#/?to=find">トップページの検索</a>が便利です。</p>
   </div>
+  <div class="kw-inline" id="find-kw">${keywordBox({ id: 'find-kw-q', title: '全国の事業をキーワードで探す', fy: st.fy })}</div>
   <div class="find-tabs" role="tablist" aria-label="探し方">
     <button type="button" role="tab" id="tab-map" aria-controls="panel-map" aria-selected="${st.tab === 'map'}">${ICON.map}<span>地図から探す</span></button>
     <button type="button" role="tab" id="tab-pref" aria-controls="panel-pref" aria-selected="${st.tab === 'pref'}">${ICON.list}<span>都道府県から探す</span></button>
@@ -94,7 +95,17 @@ export function findPage(ctx) {
   <div id="panel-pref" role="tabpanel" aria-labelledby="tab-pref"${st.tab === 'pref' ? '' : ' hidden'}></div>
   <p class="progress-line">調べた自治体：<b>${num(doneAll)}</b> / ${num(db.munis.length)}（${fyFull(st.fy)}・当初予算。都道府県 ${done('pref')}・市区町村 ${done('muni')}）。調べた自治体から順に公開しています。</p>`;
 
+  // キーワードで探す範囲は、地図や一覧で選んでいる場所に合わせる
+  const kwScope = () => (st.sel && db.byCode.has(st.sel) ? { m: st.sel } : st.pc ? { p: st.pc } : {});
+  const kwTitle = () => {
+    if (st.sel && db.byCode.has(st.sel)) return `${db.byCode.get(st.sel).full}の事業をキーワードで探す`;
+    if (st.pc) return `${db.prefs.find(p => p.pc === st.pc)?.name || ''}内の事業をキーワードで探す`;
+    return '全国の事業をキーワードで探す';
+  };
+  bindKeywordBox($('#find-kw'), kwScope, st.fy);
+
   const saveURL = () => {
+    $('#find-kw .kw-label').textContent = kwTitle();
     const p = { y: st.fy, s: st.stage === '決算' ? '決算' : '', mm: st.mode === 'total' ? '' : st.mode, ft: st.tab === 'pref' ? 'pref' : '', p: st.pc || '', sel: st.sel || '', pt: st.partial ? '' : '0' };
     history.replaceState(null, '', href('/find', p));
   };

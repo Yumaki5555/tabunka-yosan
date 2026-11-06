@@ -60,6 +60,8 @@ export function popOf(code, fy) {
 
 export const loadDetail = pc => getJSON(`data/dist/detail/${pc}.json`).catch(() => ({ projects: [], budgets: [], funds: [], recipients: [], sources: [], general: [], survey: [], changelog: [], notes: [], links: [] }));
 export const loadProjectsIndex = () => getJSON('data/dist/projects-index.json');
+// 事業名・キーワードで探すための索引（事業の内容と金額も入っていて大きいので、検索のページを開いたときだけ読む）
+export const loadSearchIndex = () => getJSON('data/dist/search.json').then(x => x.rows);
 // 使い道の円グラフで分類を押したときの、全国の事業の一覧（押したときだけ読む）
 export const loadUses = () => getJSON('data/dist/uses.json');
 export const loadGeo = file => getJSON(`data/geo/${file}.json`);

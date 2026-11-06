@@ -2,7 +2,7 @@
 
 import { db, status, cell, ratio } from './store.js';
 import { esc, normQ, yen, fmtDate, ratioPct } from './util.js';
-import { href } from './app.js';
+import { href, go } from './app.js';
 import { SURVEY_INFO, SURVEY_LABEL, RELATION_INFO, FIELD_INFO } from './schema.js';
 
 const ST_CLASS = {
@@ -65,6 +65,37 @@ export function searchMunis(q, { limit = 12, prefOnly = null } = {}) {
   }
   out.sort((a, b) => b[0] - a[0] || a[1].code.localeCompare(b[1].code));
   return out.slice(0, limit).map(x => x[1]);
+}
+
+// 事業1件の金額の見せ方（自治体のページ・キーワード検索で共通）。pj は relation と included_in、b は年度別の金額
+export function amountLabel(pj, b) {
+  if (b.verified === '要確認') return { main: yen(b.amount_yen), sub: '確認中（合計に入れていない）' };
+  if (pj.included_in) return { main: yen(b.amount_yen), sub: '別の事業の金額に含まれる再掲（足していない）' };
+  if (pj.relation === '①' || pj.relation === '②') return { main: yen(b.amount_yen), sub: '合計に入れています（全額）' };
+  if (pj.relation === '③') return b.portion_yen !== null && b.portion_yen !== undefined
+    ? { main: yen(b.portion_yen), sub: `外国人関連の部分だけ合計に（事業全体 ${yen(b.amount_yen)}）` } : { main: '関連部分は不明', sub: `事業全体 ${yen(b.amount_yen)}（足していない）` };
+  if (pj.relation === '⑤') return { main: yen(b.amount_yen), sub: '対象外（合計に入れていない）' };
+  if (pj.relation === '保留') return { main: yen(b.amount_yen), sub: '判定保留（合計に入れていない）' };
+  if (pj.relation === '別枠') return { main: yen(b.amount_yen), sub: '別枠（合計に入れていない）' };
+  return { main: yen(b.amount_yen), sub: '参考（合計に入れていない）' };
+}
+
+// 事業名・キーワードで探す欄（トップ・地図のページ・自治体のページで共通）。押すと検索のページへ
+// examples を渡すと入力の例を出す（押すとそのまま探す）。scope は範囲 { p: 都道府県, m: 自治体コード }
+export function keywordBox({ id, title, placeholder = '例：法律相談、日本語教室', examples = [], scope = {}, fy, hideTitle = false }) {
+  return `<form class="kw-box" role="search" data-kw>
+    <label for="${id}" class="kw-label${hideTitle ? ' visually-hidden' : ''}">${esc(title)}</label>
+    <div class="kw-row"><input id="${id}" type="search" name="q" autocomplete="off" placeholder="${esc(placeholder)}"><button class="btn" type="submit">探す</button></div>
+    ${examples.length ? `<div class="kw-chips" aria-label="入力の例">${examples.map(x => `<a href="${href('/search', { q: x, ...scope, y: fy })}">${esc(x)}</a>`).join('')}</div>` : ''}
+  </form>`;
+}
+// getScope は押したときの範囲を返す（地図のページのように、選んでいる場所で範囲が変わるとき）
+export function bindKeywordBox(root, getScope, fy) {
+  const form = root.querySelector('[data-kw]');
+  form.addEventListener('submit', ev => {
+    ev.preventDefault();
+    go('/search', { q: form.q.value.trim(), ...getScope(), y: fy });
+  });
 }
 
 // 入力するたびに候補を出す欄。onPick(m) で選んだ自治体を受け取る

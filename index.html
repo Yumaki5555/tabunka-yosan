@@ -19,7 +19,7 @@
 <link rel="icon" href="assets/img/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
-<link rel="stylesheet" href="assets/css/style.css?v=202610301830">
+<link rel="stylesheet" href="assets/css/style.css?v=202611061738">
 </head>
 <body>
 <a class="skip" href="#app">本文へ移動</a>
@@ -47,7 +47,7 @@
       <div class="menu-grp"><p class="menu-h">調べる</p>
         <a href="#/?to=find">自治体名で探す</a>
         <a href="#/find" data-keep-year>地図・都道府県から探す</a>
-        <a href="#/search">事業の詳細検索</a></div>
+        <a href="#/search">事業・キーワードで探す</a></div>
       <div class="menu-grp"><p class="menu-h">全国を見る</p>
         <a href="#/national" data-keep-year>使い道（10分類）</a>
         <a href="#/ranking" data-keep-year>ランキング</a>
@@ -90,36 +90,37 @@
 <script type="importmap">
 {
  "imports": {
-  "./assets/js/app.js": "./assets/js/app.js?v=202610301830",
-  "./assets/js/calc.js": "./assets/js/calc.js?v=202610301830",
-  "./assets/js/charts.js": "./assets/js/charts.js?v=202610301830",
-  "./assets/js/components.js": "./assets/js/components.js?v=202610301830",
-  "./assets/js/csv.js": "./assets/js/csv.js?v=202610301830",
-  "./assets/js/export.js": "./assets/js/export.js?v=202610301830",
-  "./assets/js/icons.js": "./assets/js/icons.js?v=202610301830",
-  "./assets/js/illust.js": "./assets/js/illust.js?v=202610301830",
-  "./assets/js/map.js": "./assets/js/map.js?v=202610301830",
-  "./assets/js/page-about.js": "./assets/js/page-about.js?v=202610301830",
-  "./assets/js/page-compare.js": "./assets/js/page-compare.js?v=202610301830",
-  "./assets/js/page-data.js": "./assets/js/page-data.js?v=202610301830",
-  "./assets/js/page-find.js": "./assets/js/page-find.js?v=202610301830",
-  "./assets/js/page-guide.js": "./assets/js/page-guide.js?v=202610301830",
-  "./assets/js/page-home.js": "./assets/js/page-home.js?v=202610301830",
-  "./assets/js/page-muni.js": "./assets/js/page-muni.js?v=202611042000",
-  "./assets/js/page-national.js": "./assets/js/page-national.js?v=202610301830",
-  "./assets/js/page-ranking.js": "./assets/js/page-ranking.js?v=202610301830",
-  "./assets/js/page-search.js": "./assets/js/page-search.js?v=202610301830",
-  "./assets/js/page-status.js": "./assets/js/page-status.js?v=202610301830",
-  "./assets/js/page-trend.js": "./assets/js/page-trend.js?v=202610301830",
-  "./assets/js/schema.js": "./assets/js/schema.js?v=202610301830",
-  "./assets/js/store.js": "./assets/js/store.js?v=202610301830",
-  "./assets/js/uses.js": "./assets/js/uses.js?v=202610301830",
-  "./assets/js/util.js": "./assets/js/util.js?v=202610301830",
-  "./assets/js/validate.js": "./assets/js/validate.js?v=202610301830"
+  "./assets/js/app.js": "./assets/js/app.js?v=202611061738",
+  "./assets/js/calc.js": "./assets/js/calc.js?v=202611061738",
+  "./assets/js/charts.js": "./assets/js/charts.js?v=202611061738",
+  "./assets/js/components.js": "./assets/js/components.js?v=202611061738",
+  "./assets/js/csv.js": "./assets/js/csv.js?v=202611061738",
+  "./assets/js/export.js": "./assets/js/export.js?v=202611061738",
+  "./assets/js/icons.js": "./assets/js/icons.js?v=202611061738",
+  "./assets/js/illust.js": "./assets/js/illust.js?v=202611061738",
+  "./assets/js/map.js": "./assets/js/map.js?v=202611061738",
+  "./assets/js/page-about.js": "./assets/js/page-about.js?v=202611061738",
+  "./assets/js/page-compare.js": "./assets/js/page-compare.js?v=202611061738",
+  "./assets/js/page-data.js": "./assets/js/page-data.js?v=202611061738",
+  "./assets/js/page-find.js": "./assets/js/page-find.js?v=202611061738",
+  "./assets/js/page-guide.js": "./assets/js/page-guide.js?v=202611061738",
+  "./assets/js/page-home.js": "./assets/js/page-home.js?v=202611061738",
+  "./assets/js/page-muni.js": "./assets/js/page-muni.js?v=202611061738",
+  "./assets/js/page-national.js": "./assets/js/page-national.js?v=202611061738",
+  "./assets/js/page-ranking.js": "./assets/js/page-ranking.js?v=202611061738",
+  "./assets/js/page-search.js": "./assets/js/page-search.js?v=202611061738",
+  "./assets/js/page-status.js": "./assets/js/page-status.js?v=202611061738",
+  "./assets/js/page-trend.js": "./assets/js/page-trend.js?v=202611061738",
+  "./assets/js/schema.js": "./assets/js/schema.js?v=202611061738",
+  "./assets/js/search.js": "./assets/js/search.js?v=202611061738",
+  "./assets/js/store.js": "./assets/js/store.js?v=202611061738",
+  "./assets/js/uses.js": "./assets/js/uses.js?v=202611061738",
+  "./assets/js/util.js": "./assets/js/util.js?v=202611061738",
+  "./assets/js/validate.js": "./assets/js/validate.js?v=202611061738"
  }
 }
 </script>
-<script type="module" src="assets/js/app.js?v=202610301830"></script>
+<script type="module" src="assets/js/app.js?v=202611061738"></script>
 <!-- version:end -->
 </body>
 </html>
