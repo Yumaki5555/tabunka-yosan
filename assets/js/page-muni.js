@@ -159,9 +159,8 @@ export async function muniPage(ctx, code) {
     <a class="entry" href="${href('/compare', { c: code, y: fy })}">${ICON.compare}<span>ほかの自治体と比べる<small>予算額・割合・使い道を並べる</small></span></a>
   </div>
   <section class="proj-panel" id="projects" data-reveal hidden aria-labelledby="pj-h"><h2 id="pj-h" class="sec-h">事業の一覧</h2>
-    <p class="print-only">${esc(m.full)}　${esc(when)}（合計に入れていない事業も含む）</p>
     <p class="chart-cap">事業を押すと、目的・中身・年度ごとの金額・財源・支払先・公式資料へのリンクが開きます。</p>
-    ${D.projects.length ? `<p class="pj-print"><button type="button" class="btn btn-outline btn-small" id="pj-print">この一覧を印刷する（合計に入れていない事業も含む）</button></p>` : ''}
+    ${D.projects.length ? `<p class="pj-print"><button type="button" class="btn btn-outline btn-small" id="pj-print">この一覧をA4の要約で印刷する（合計に入れていない事業も含む）</button></p>` : ''}
     <div id="proj-box"></div></section>
 
   <section class="deep" aria-labelledby="deep-h"><h2 id="deep-h" class="sec-h">さらに詳しく調べる</h2>
@@ -344,6 +343,32 @@ export async function muniPage(ctx, code) {
     pbox.innerHTML = `${mainProjects.length ? `<h3 class="grp-h">外国人に関係する事業（${mainProjects.length}件）</h3><div class="proj-list">${byAmt(mainProjects).map(pj => projHTML(pj, amtLine(pj, fy, stage))).join('')}</div>` : ''}
       ${refProjects.length ? `<details class="grp"${refProjects.some(x => x.project_id === openPj) ? ' open' : ''}><summary>参考：合計に入れていない関連事業・対象外（${refProjects.length}件）</summary><p class="small muted">国際交流協会の運営補助・姉妹都市交流など、外国人住民などへの支出として金額を特定できない事業や、対象外と判断した事業です。</p><div class="proj-list">${byAmt(refProjects).map(pj => projHTML(pj, amtLine(pj, fy, stage))).join('')}</div></details>` : ''}
       ${bkProjects.length ? `<details class="grp"${bkProjects.some(x => x.project_id === openPj) ? ' open' : ''}><summary>別枠：${esc(bkGroups.map(g => g.label).join('・'))}（${bkProjects.length}件・合計に入れていない）</summary><p class="small muted">${esc(R['別枠'].desc)}</p><div class="proj-list">${byAmt(bkProjects).map(pj => projHTML(pj, amtLine(pj, fy, stage))).join('')}</div></details>` : ''}`;
+    // 印刷用の要約（A4・1枚ほど）：事業名・分類・担当・金額の表。合計に入れていない事業・別枠も載せる。画面には出さない
+    const plain = s => String(s).replace(/<[^>]+>/g, '');
+    const mainNote = s => /^合計に入れています（全額）$|の金額の記録なし$/.test(s) ? '' : s
+      .replace(/^外国人関連の部分だけ合計に（事業全体 (.+)）$/, '事業全体 $1 のうち').replace(/^事業全体 (.+)（足していない）$/, '事業全体 $1').replace(/^別の事業の金額に含まれる再掲/, '再掲');
+    const refNote = s => /の金額の記録なし$|^(参考|別枠)（/.test(s) ? '' : s.replace(/（合計に入れていない）$/, '');
+    // 担当は、いちばん下の課・室だけ（例：「教育庁 学校教育部 義務教育課」→「義務教育課」）。括弧の中の説明は省く
+    const deptShort = s => { const w = String(s || '').split(/[（(]/)[0].trim().split(/\s+/).pop(); return w.replace(/^.*(?:局|部|庁)(?=.)/, '').replace(/^.*課(?=.+室$)/, '') || w; };
+    const rows = (list, note) => byAmt(list).map(pj => {
+      const a = amtLine(pj, fy, stage), n = note(a.sub);
+      return `<tr><td>${esc(pj.name)}</td><td class="sm">${esc(fieldLabel(pj.field))}</td><td class="sm">${esc(deptShort(pj.department))}</td><td class="num">${esc(a.main)}${n ? `<small>${esc(n)}</small>` : ''}</td></tr>`;
+    }).join('');
+    const grp = (title, list, note, tail = '') => list.length ? `<tbody><tr class="g"><th colspan="4">${esc(title)}（${list.length}件${tail}）</th></tr>${rows(list, note)}</tbody>` : '';
+    const sumText = total !== null && total > 0 ? `${yen(total, { approx: true })}（${bd.inc.length}事業の合計${st === '一部確認' ? '。一部の資料だけで確かめた分' : ''}）` : plain(headValue);
+    const d = new Date();
+    const url = location.origin + location.pathname + href('/m/' + code, { y: fy, s: sQ(stage) });
+    app.insertAdjacentHTML('beforeend', `<section id="pj-sheet" class="print-sheet${D.projects.length > 40 ? ' dense2' : D.projects.length > 28 ? ' dense' : ''}" aria-hidden="true">
+      <h1>${esc(m.full)}　外国人に関係する事業の一覧</h1>
+      <p class="ps-sum">${esc(when)}　｜　合計 <b>${esc(sumText)}</b>${rv.v !== null && rv.v !== undefined ? `　｜　一般会計に占める割合 <b>${esc(rv.text)}</b>` : ''}</p>
+      <table><colgroup><col class="c1"><col class="c2"><col class="c3"><col class="c4"></colgroup>
+        <thead><tr><th>事業名</th><th>分類</th><th>担当</th><th class="num">金額</th></tr></thead>
+        ${grp('外国人に関係する事業', mainProjects, mainNote)}
+        ${grp('参考：合計に入れていない関連事業・対象外', refProjects, refNote)}
+        ${grp(`別枠：${bkGroups.map(g => g.label).join('・')}`, bkProjects, refNote, '・合計に入れていない')}
+      </table>
+      <p class="ps-foot">合計に入れていない事業は、国際交流協会の運営補助・姉妹都市交流など、外国人住民などへの支出として金額を特定できない事業や、対象外と判断した事業です。金額は予算書などの公式資料によります。事業の目的・中身・出典は「全国 多文化共生予算マップ」で見られます：${esc(url)}（印刷 ${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日）</p>
+    </section>`);
   }
   // 「声を届ける。」へ（戻り先に、この事業を開いた状態のURLを渡す）。
   // 窓口検索は自治体コードで地域を選んだ状態で開く。コードを照合できないときは、向こうの画面で利用者に選んでもらう
