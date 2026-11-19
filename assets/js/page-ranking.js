@@ -21,9 +21,10 @@ export const RANK_KINDS = {
 const MAIN = [['high', '予算の合計'], ['ratio', '一般会計に占める割合'], ['perCapita', '住民1人当たり'], ['perForeign', '外国人住民1人当たり'], ['up', '前年度からの増減']];
 const mainOf = k => k === 'low' ? 'high' : k === 'down' ? 'up' : k;
 
-export function rankRows({ kind, level, fy, stage, partial }) {
+// pc：市区町村のランキングを1つの都道府県の中だけにしぼる（自治体コードの上2けた。空なら全国）
+export function rankRows({ kind, level, fy, stage, partial, pc = '' }) {
   const k = RANK_KINDS[kind];
-  const pool = db.munis.filter(m => (level === 'pref') === m.isPref);
+  const pool = db.munis.filter(m => (level === 'pref') === m.isPref && (level === 'pref' || !pc || m.pc === pc));
   const rows = [];
   for (const m of pool) {
     const v = metricOf(k.mode, m.code, fy, stage, partial);
@@ -37,7 +38,11 @@ export function rankRows({ kind, level, fy, stage, partial }) {
   return rows;
 }
 
-function condition({ kind, level, fy, stage, partial, n }) {
+// 比べる範囲の名前（例：市区町村・茨城県内の市区町村・都道府県庁）
+const prefName = pc => db.prefs.find(p => p.pc === pc)?.name ?? '';
+const scopeName = (level, pc) => level === 'pref' ? '都道府県庁' : pc && prefName(pc) ? `${prefName(pc)}内の市区町村` : '市区町村';
+
+function condition({ kind, level, fy, stage, partial, n, pc }) {
   const k = RANK_KINDS[kind];
   if (k.mode === 'yoy') partial = false;
   const asOf = db.pop?.asOf?.[fy];
@@ -45,7 +50,7 @@ function condition({ kind, level, fy, stage, partial, n }) {
     : k.mode === 'perCapita' ? `計算：予算の合計 ÷ 住民の数（住民基本台帳、${asOf ? asOf.pop.slice(0, 4) + '年1月1日' : '1月1日'}現在）。`
       : k.mode === 'ratio' ? `計算：確認できた予算のうち一般会計の事業の金額 ÷ その自治体の一般会計の${stage === '決算' ? '決算額' : '当初予算の総額'}（同じ年度）。一般会計の総額を確かめた自治体だけ。`
         : k.mode === 'yoy' ? `${fy - 1}年度と${fy}年度の両方を、同じ段階で主な資料まで調べた自治体だけ（一部の資料だけ調べた年度があると、調べた範囲の差で増減が大きく見えるため比べません）。増減率は、両方の年度に金額がある同じ事業どうしで計算しています（新しく始まった・終わった事業、前の年度の補正予算に前倒しした事業、片方の年度だけ金額が分かった事業は入れません）。` : '';
-  return `<details class="cond-box"><summary><b>比べる条件</b>：${esc(fyFull(fy))}・${esc(stage)}・${level === 'pref' ? '都道府県庁' : '市区町村'}・${esc(stLabel('確認済み'))}${partial ? `と${esc(stLabel('一部確認'))}` : ''}の${num(n)}自治体</summary>
+  return `<details class="cond-box"><summary><b>比べる条件</b>：${esc(fyFull(fy))}・${esc(stage)}・${esc(scopeName(level, pc))}・${esc(stLabel('確認済み'))}${partial ? `と${esc(stLabel('一部確認'))}` : ''}の${num(n)}自治体</summary>
     <p class="small">金額は自治体のページと同じ数え方（公式資料で確認できた多文化共生関連予算）です。${extra}未調査の自治体は0円として順位に入れていません。都道府県と市区町村は別のランキングです。${partial ? '「一部の資料だけ調査」の自治体は、確認できた分だけなので実際より少ない可能性があります（割合は「確認済み分の割合」）。' : ''}</p>
     <p class="small"><b>完全な比較ではありません。</b>自治体ごとに資料の詳しさや調べた範囲がちがい、ほかの事業にまざって金額が分からない支出は入っていません。</p></details>`;
 }
@@ -75,11 +80,13 @@ export async function rankingPage(ctx) {
     level: params.get('lv') === 'muni' ? 'muni' : 'pref',
     fy: currentYear(params), stage: currentStage(params), partial: params.get('pt') !== '0',
     all: params.get('all') === '1',
+    pc: db.prefs.some(p => p.pc === params.get('p')) ? params.get('p') : '',
   };
-  const save = () => history.replaceState(null, '', href('/ranking', { k: st.kind === 'high' ? '' : st.kind, lv: st.level === 'pref' ? '' : st.level, y: st.fy, s: st.stage === '決算' ? '決算' : '', pt: st.partial ? '' : '0', all: st.all ? '1' : '' }));
+  const save = () => history.replaceState(null, '', href('/ranking', { k: st.kind === 'high' ? '' : st.kind, lv: st.level === 'pref' ? '' : st.level, y: st.fy, s: st.stage === '決算' ? '決算' : '', pt: st.partial ? '' : '0', all: st.all ? '1' : '', p: st.level === 'muni' ? st.pc : '' }));
   const draw = () => {
     save();
-    const rows = rankRows(st);
+    const pc = st.level === 'muni' ? st.pc : '';
+    const rows = rankRows({ ...st, pc });
     const k = RANK_KINDS[st.kind];
     const main = mainOf(st.kind);
     const desc = st.kind === 'low' || st.kind === 'down';
@@ -91,15 +98,16 @@ export async function rankingPage(ctx) {
         <div class="ctl"><span class="label">年度</span>${yearPicker(st.fy, 'rk-fy')}</div>
         <div class="ctl"><span class="label">予算か決算か</span>${stageSeg(st.stage)}</div>
         <div class="ctl"><span class="label">比べる自治体</span><div class="seg seg-sm" role="group" aria-label="都道府県か市区町村か">${[['muni', '市区町村'], ['pref', '都道府県']].map(([key, l]) => `<button type="button" data-rl="${key}" aria-pressed="${key === st.level}">${l}</button>`).join('')}</div></div>
+        ${st.level === 'muni' ? `<label class="ctl"><span class="label">都道府県</span><select id="rk-pc"><option value="">全国</option>${db.prefs.map(p => `<option value="${p.pc}"${p.pc === pc ? ' selected' : ''}>${esc(p.name)}</option>`).join('')}</select></label>` : ''}
       </div>
       <div class="ctl"><span class="label">指標</span><div class="seg" role="group" aria-label="指標">${MAIN.map(([key, l]) => `<button type="button" data-rk="${key}" aria-pressed="${key === main}">${esc(l)}</button>`).join('')}</div></div>
       <div class="ctl-row tight">
         ${main === 'high' || main === 'up' ? `<div class="seg seg-sm" role="group" aria-label="並び">${main === 'high' ? `<button type="button" data-rk="high" aria-pressed="${st.kind === 'high'}">多い順</button><button type="button" data-rk="low" aria-pressed="${st.kind === 'low'}">少ない順</button>` : `<button type="button" data-rk="up" aria-pressed="${st.kind === 'up'}">増えた順</button><button type="button" data-rk="down" aria-pressed="${st.kind === 'down'}">減った順</button>`}</div>` : ''}
         ${k.mode !== 'yoy' ? `<label class="check small"><input type="checkbox" id="rk-pt" ${st.partial ? 'checked' : ''}> 一部の資料だけ調べた自治体も含める（参考）</label>` : ''}
       </div>
-      ${condition({ ...st, n: rows.length })}
+      ${condition({ ...st, pc, n: rows.length })}
       ${rows.length ? scopeNoteHTML() : ''}
-      <h2 class="rank-h">${esc(k.label)}${desc ? '' : main === 'up' ? '' : ''}<small>${esc(st.level === 'pref' ? '都道府県庁' : '市区町村')}・${esc(fyFull(st.fy))}・${esc(st.stage)}</small></h2>
+      <h2 class="rank-h">${esc(k.label)}${desc ? '' : main === 'up' ? '' : ''}<small>${esc(scopeName(st.level, pc))}・${esc(fyFull(st.fy))}・${esc(st.stage)}</small></h2>
       ${rows.length ? rankBarsHTML(rows, { kind: st.kind, fy: st.fy, stage: st.stage, limit: st.all ? 0 : LIMIT })
         : `<p class="note">この条件で比べられる自治体は、まだありません。${!st.partial && k.mode !== 'yoy' ? `「一部の資料だけ調べた自治体も含める」にすると表示される場合があります。` : ''}</p>`}
       ${rows.length > LIMIT && !st.all ? `<p><button type="button" class="btn btn-outline" id="rk-all">残りの${num(rows.length - LIMIT)}自治体も表示する</button></p>` : ''}
@@ -107,11 +115,12 @@ export async function rankingPage(ctx) {
     bindYearPicker(app, y => { st.fy = y; draw(); });
     $$('[data-stage]', app).forEach(b => b.addEventListener('click', () => { st.stage = b.dataset.stage; draw(); }));
     $$('[data-rk]', app).forEach(b => b.addEventListener('click', () => { st.kind = b.dataset.rk; draw(); }));
-    $$('[data-rl]', app).forEach(b => b.addEventListener('click', () => { st.level = b.dataset.rl; draw(); }));
+    $$('[data-rl]', app).forEach(b => b.addEventListener('click', () => { st.level = b.dataset.rl; st.all = false; draw(); }));
+    $('#rk-pc')?.addEventListener('change', e => { st.pc = e.target.value; st.all = false; draw(); });
     $('#rk-pt')?.addEventListener('change', e => { st.partial = e.target.checked; draw(); });
     $('#rk-all')?.addEventListener('click', () => { st.all = true; draw(); });
     $('#rk-csv').addEventListener('click', () => {
-      download(`ranking_${st.kind}_${st.level}_${st.fy}_${st.stage}.csv`, toCSV(
+      download(`ranking_${st.kind}_${st.level}${pc ? '_' + pc : ''}_${st.fy}_${st.stage}.csv`, toCSV(
         ['順位', '自治体コード', '都道府県', '自治体', '年度', '段階', '集計区分', '指標', '値', '多文化共生関連予算の合計（円）', '一般会計の予算総額（円）', '合計に入れた事業の数', '人口', '外国人住民数', '調査状況', '別枠の事業の金額（円・合計に入れていない）'],
         rows.map(r => { const p = popOf(r.m.code, st.fy); return [r.rank, r.m.code, r.m.pref, r.m.isPref ? '' : r.m.name, st.fy, st.stage, '基本集計：①直接給付・支援＋②行政経費＋③一般事業のうち分かった部分', k.label, k.mode === 'yoy' ? (r.v * 100).toFixed(2) + '%' : k.mode === 'ratio' ? (r.v * 100).toFixed(4) + '%' : Math.round(r.v), r.a ?? '', generalOf(r.m.code, st.fy, st.stage) ?? '', r.n, p?.population ?? '', p?.foreign ?? '', stLabel(r.st), cell(r.m.code, st.fy, st.stage)?.bw ?? '']; })));
     });
