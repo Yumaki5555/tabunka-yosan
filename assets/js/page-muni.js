@@ -28,6 +28,18 @@ const FUND_ROWS = [
   { key: 'unknown', color: COLORS.fund.unknown, pattern: true },
 ];
 const fundLabel = r => r.label || FUND_LABELS[r.key];
+// 印刷するときは、事業の一覧の折りたたみ（合計に入れていない事業・別枠）を開いて印刷し、終わったら元に戻す。
+// 「この一覧を印刷する」ボタンのときは body に print-pj を付け、事業の一覧だけを印刷する（style.css の @media print）
+let printOpened = [];
+window.addEventListener('beforeprint', () => {
+  printOpened = [...document.querySelectorAll('#proj-box details.grp:not([open])')];
+  printOpened.forEach(d => { d.open = true; });
+});
+window.addEventListener('afterprint', () => {
+  printOpened.forEach(d => { d.open = false; });
+  printOpened = [];
+  document.body.classList.remove('print-pj');
+});
 
 export async function muniPage(ctx, code) {
   const { app, params } = ctx;
@@ -147,7 +159,9 @@ export async function muniPage(ctx, code) {
     <a class="entry" href="${href('/compare', { c: code, y: fy })}">${ICON.compare}<span>ほかの自治体と比べる<small>予算額・割合・使い道を並べる</small></span></a>
   </div>
   <section class="proj-panel" id="projects" data-reveal hidden aria-labelledby="pj-h"><h2 id="pj-h" class="sec-h">事業の一覧</h2>
+    <p class="print-only">${esc(m.full)}　${esc(when)}（合計に入れていない事業も含む）</p>
     <p class="chart-cap">事業を押すと、目的・中身・年度ごとの金額・財源・支払先・公式資料へのリンクが開きます。</p>
+    ${D.projects.length ? `<p class="pj-print"><button type="button" class="btn btn-outline btn-small" id="pj-print">この一覧を印刷する（合計に入れていない事業も含む）</button></p>` : ''}
     <div id="proj-box"></div></section>
 
   <section class="deep" aria-labelledby="deep-h"><h2 id="deep-h" class="sec-h">さらに詳しく調べる</h2>
@@ -186,6 +200,7 @@ export async function muniPage(ctx, code) {
     if (open && scroll) pjPanel.scrollIntoView({ block: 'start', behavior: 'smooth' });
   };
   pjBtn.addEventListener('click', () => showProjects(pjPanel.hidden, true));
+  $('#pj-print')?.addEventListener('click', () => { document.body.classList.add('print-pj'); window.print(); });
   if (openPj) showProjects(true, false);
   if ($('#muni-kw')) bindKeywordBox($('#muni-kw'), () => (m.isPref ? { p: m.pc } : { m: code }), fy);
 

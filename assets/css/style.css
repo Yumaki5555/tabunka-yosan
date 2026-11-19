@@ -825,6 +825,13 @@ details.uz[open] > summary { margin-bottom: 0; background: var(--soft); border-r
   .more-links { grid-template-columns: 1fr; }
   .picker-big input { padding-left: 44px; background-position: 12px center; font-size: 1rem; }
 }
+.print-only { display: none; }
 @media print {
-  .site-header, .to-top, .map-zoom, .btn-row { display: none; }
+  .site-header, .to-top, .map-zoom, .btn-row, .pj-print { display: none; }
+  /* 「この一覧を印刷する」：事業の一覧だけを印刷する（開いた事業は中身も出る） */
+  body.print-pj nihon-site-nav, body.print-pj .site-footer, body.print-pj #app > :not(#projects), body.print-pj #projects .chart-cap { display: none !important; }
+  body.print-pj .print-only { display: block; font-weight: 700; margin: 0 0 8px; }
+  .proj-list { display: block; }
+  .proj { margin: 0 0 6px; break-inside: avoid; }
+  .grp > summary { color: inherit; }
 }
