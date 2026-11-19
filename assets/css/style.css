@@ -158,6 +158,8 @@ details > *:last-child { margin-bottom: 12px; }
 .next-links { display: flex; flex-wrap: wrap; gap: 8px 22px; margin: 18px 0; }
 .next-links a, .next-links .linklike { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; min-height: var(--tap); }
 .next-links svg { width: 22px; height: 22px; }
+.img-save { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.img-save select { min-height: 40px; padding-top: 4px; padding-bottom: 4px; font-size: .9rem; }
 
 /* 調査状況の札 */
 .st { display: inline-block; font-size: .82rem; font-weight: 700; padding: 1px 10px; border-radius: 999px; border: 1.5px solid transparent; line-height: 1.7; white-space: nowrap; vertical-align: middle; }
