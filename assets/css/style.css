@@ -473,6 +473,10 @@ tr:last-child td { border-bottom: none; }
 /* 別枠（学校の教員の人件費、中国残留邦人等・引揚者などの援護）の金額。合計とは分けて小さく示す */
 .kpi-aside { margin: 10px 0 0; padding: 8px 12px; border-radius: 10px; background: #fff; border: 1px dashed #c9dccf; font-size: .9rem; color: var(--muted); line-height: 1.65; }
 .kpi-aside b { color: var(--text); }
+/* 県内ランキングへの入口（県内の順位とリンク） */
+.kpi-rank { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; margin: 10px 0 0; font-size: .92rem; color: var(--muted); }
+.kpi-rank b { color: var(--text); font-size: 1rem; font-variant-numeric: tabular-nums; }
+.kpi-rank a { font-weight: 700; }
 .kpi-how { margin: 12px 0 0; font-size: .92rem; }
 .kpi-how a { font-weight: 700; }
 .tc-text { font-size: 1.5rem; color: var(--text); }

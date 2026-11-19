@@ -14,6 +14,7 @@ import { renderUses, coverageHTML, singleCoverageHTML, overlapHTML, breakdownIte
 import { RELATION_INFO, SURVEY_INFO, FIELD_INFO, TYPE_INFO, CHECK_INFO, TOTAL_LABEL, BETSU_GROUPS, betsuGroupOf } from './schema.js';
 import { ICON } from './icons.js';
 import { budgetCSV } from './export.js';
+import { rankRows } from './page-ranking.js';
 
 const short = (y, small) => small ? `${String(y).slice(2)}` : `${y}`;
 // 割合（0より大きく0.1%未満は「0.1%未満」と書く）
@@ -97,6 +98,15 @@ export async function muniPage(ctx, code) {
   }
   const genTotal = generalOf(code, fy, stage);
   const genSrc = gRow ? src.get(gRow.source_id) : null;
+  // 県内ランキングへの入口（市区町村は県内の順位も出す。順位はランキングの最初の表示と同じ「予算の合計・一部の資料だけ調べた自治体も含める」）
+  const prefOf = db.prefs.find(x => x.pc === m.pc);
+  const rankHref = href('/ranking', { lv: 'muni', p: m.pc, y: fy, s: sQ(stage) });
+  const rankLine = (() => {
+    if (m.isPref) return `<p class="kpi-rank"><a href="${rankHref}">${esc(m.name)}内の市区町村のランキングを見る</a></p>`;
+    const rows = rankRows({ kind: 'high', level: 'muni', fy, stage, partial: true, pc: m.pc });
+    const me = rows.find(r => r.m.code === code);
+    return `<p class="kpi-rank">${me && rows.length > 1 ? `<span>${esc(prefOf.name)}内の順位（予算の合計）</span><b>${me.rank}位</b><span>調べた${num(rows.length)}市区町村のうち</span>` : ''}<a href="${rankHref}">${esc(prefOf.name)}内のランキングを見る</a></p>`;
+  })();
 
   app.innerHTML = `
   <nav class="crumbs" aria-label="現在の場所"><a href="${href('/', { y: fy, to: 'find' })}">自治体を探す</a> › ${m.isPref ? esc(m.name) : `<a href="${href('/m/' + db.prefs.find(x => x.pc === m.pc).code, { y: fy })}">${esc(m.pref)}</a> › ${esc(m.name)}`}</nav>
@@ -122,6 +132,7 @@ export async function muniPage(ctx, code) {
       ${rv.sub ? `<p class="kpi-sub2">${esc(rv.sub)}</p>` : ''}
     </div>
     <p class="kpi-base"><span>一般会計の${stage === '決算' ? '決算額' : '予算総額'}</span><b>${genTotal ? esc(yenShort(genTotal)) : '未確認'}</b>${genSrc ? `<a href="${esc(genSrc.archived_url || genSrc.url)}" target="_blank" rel="noopener">出典</a>` : ''}</p>
+    ${rankLine}
     ${!checking && (bd.inc.length || bd.pend.length || nRef || bd.ex.length || bd.bk.length) ? `<p class="kpi-how"><a href="${href('/m/' + code, { y: fy, s: sQ(stage), to: 'method' })}" id="calc-link">この金額はどう計算した？</a></p>` : ''}
   </section>
 
