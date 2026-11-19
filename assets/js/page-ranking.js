@@ -2,7 +2,7 @@
 // 自治体名・値・横棒を1行にまとめる。指標は「予算の合計・一般会計に占める割合・住民1人当たり・外国人住民1人当たり・増減」を切り替える
 
 import { db, metricOf, status, cell, loadPopulation, popOf, generalOf } from './store.js';
-import { $, $$, esc, yen, yenExact, yenPer, pct, num, fyFull, download, ratioPct, toast } from './util.js';
+import { $, $$, esc, yen, yenExact, yenPer, pct, num, fyFull, download, ratioPct, toast, printSheet } from './util.js';
 import { href, currentYear, currentStage, yearPicker, bindYearPicker, stageSeg } from './app.js';
 import { statusBadge, stLabel, exploreTabs, scopeNoteHTML } from './components.js';
 import { ICON } from './icons.js';
@@ -94,7 +94,24 @@ export function rankBarsHTML(rows, { kind, fy, stage, limit }) {
   }).join('')}</ol>`;
 }
 
-// 画像に入れる数の選択肢（上位10・20・30。60以下なら「すべて」も）
+// 印刷用の表（A4・1枚ほど）：順位・自治体・棒・値・補足。題と注意書きは画像と同じ（imageText）。画面には出さない
+function rankSheetHTML(rows, n, { kind, fy, stage, showPref, t }) {
+  const k = RANK_KINDS[kind];
+  const shown = rows.slice(0, n);
+  const max = Math.max(...shown.map(r => Math.abs(r.v)), 1e-12);
+  const d = new Date();
+  return `<section id="rk-sheet" class="print-sheet${n > 50 ? ' dense2' : n > 36 ? ' dense' : ''}" aria-hidden="true">
+    <h1>${esc(t.title)}</h1><p class="ps-sum">${esc(t.sub)}</p>
+    <table class="rk-tbl"><colgroup><col class="r1"><col class="r2"><col class="r3"><col class="r4"><col class="r5"></colgroup>
+      <thead><tr><th class="num">順位</th><th>自治体</th><th></th><th class="num">${esc(k.label)}</th><th>補足</th></tr></thead>
+      <tbody>${shown.map(r => {
+        const sub = [k.mode === 'total' ? `${r.n}事業` : `予算 ${yen(r.a)}`, k.mode === 'ratio' && generalOf(r.m.code, fy, stage) ? `一般会計 ${yen(generalOf(r.m.code, fy, stage), { approx: true })}` : '', r.st === '一部確認' ? '一部の資料だけ調査' : ''].filter(Boolean).join('・');
+        return `<tr><td class="num">${r.rank}</td><td>${esc(r.m.name)}${showPref ? `<small>（${esc(r.m.pref)}）</small>` : ''}</td><td><span class="psb"><i class="${k.mode === 'yoy' && r.v < 0 ? 'neg' : ''}${r.st === '一部確認' ? ' part' : ''}" style="width:${Math.max(1.5, Math.abs(r.v) / max * 100).toFixed(2)}%"></i></span></td><td class="num">${esc(k.fmt(r.v))}</td><td class="sm">${esc(sub)}</td></tr>`;
+      }).join('')}</tbody></table>
+    <div class="ps-foot">${t.notes.map(x => `<p>${esc(x)}</p>`).join('')}<p>印刷 ${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日</p></div></section>`;
+}
+
+// 画像・印刷に入れる数の選択肢（上位10・20・30。60以下なら「すべて」も）
 const imgNs = total => [...[10, 20, 30].filter(x => x < total), ...(total <= 60 ? [total] : [])];
 
 export async function rankingPage(ctx) {
@@ -137,7 +154,7 @@ export async function rankingPage(ctx) {
       ${rows.length ? rankBarsHTML(rows, { kind: st.kind, fy: st.fy, stage: st.stage, limit: st.all ? 0 : LIMIT })
         : `<p class="note">この条件で比べられる自治体は、まだありません。${!st.partial && k.mode !== 'yoy' ? `「一部の資料だけ調べた自治体も含める」にすると表示される場合があります。` : ''}</p>`}
       ${rows.length > LIMIT && !st.all ? `<p><button type="button" class="btn btn-outline" id="rk-all">残りの${num(rows.length - LIMIT)}自治体も表示する</button></p>` : ''}
-      <p class="next-links">${rows.length ? `<span class="img-save"><button type="button" class="linklike" id="rk-png">${ICON.download}このグラフを画像で保存</button><select id="rk-png-n" aria-label="画像に入れる自治体の数">${imgNs(rows.length).map(x => `<option value="${x}">${x === rows.length ? `すべて（${num(x)}）` : `上位${x}`}</option>`).join('')}</select></span>` : ''}<button type="button" class="linklike" id="rk-csv">${ICON.download}この順位をCSVでダウンロード</button><a href="${href('/compare', { y: st.fy, c: rows.slice(0, 3).map(r => r.m.code).join(',') })}">${ICON.compare}上位3つを比較する</a></p>`;
+      <p class="next-links">${rows.length ? `<span class="img-save"><button type="button" class="linklike" id="rk-png">${ICON.download}このグラフを画像で保存</button><button type="button" class="linklike" id="rk-print">印刷する（A4）</button><select id="rk-png-n" aria-label="画像・印刷に入れる自治体の数">${imgNs(rows.length).map(x => `<option value="${x}">${x === rows.length ? `すべて（${num(x)}）` : `上位${x}`}</option>`).join('')}</select></span>` : ''}<button type="button" class="linklike" id="rk-csv">${ICON.download}この順位をCSVでダウンロード</button><a href="${href('/compare', { y: st.fy, c: rows.slice(0, 3).map(r => r.m.code).join(',') })}">${ICON.compare}上位3つを比較する</a></p>`;
     bindYearPicker(app, y => { st.fy = y; draw(); });
     $$('[data-stage]', app).forEach(b => b.addEventListener('click', () => { st.stage = b.dataset.stage; draw(); }));
     $$('[data-rk]', app).forEach(b => b.addEventListener('click', () => { st.kind = b.dataset.rk; draw(); }));
@@ -153,6 +170,13 @@ export async function rankingPage(ctx) {
         const t = imageText({ ...st, pc, n, total: rows.length, partialShown: rows.slice(0, n).some(r => r.st === '一部確認') });
         download(t.file, await rankImageBlob({ rows, n, title: t.title, sub: t.sub, notes: t.notes, fmt: k.fmt, showPref: st.level === 'muni' && !pc }), 'image/png');
       } catch { toast('画像を作れませんでした'); } finally { btn.disabled = false; }
+    });
+    $('#rk-print')?.addEventListener('click', () => {
+      const n = Number($('#rk-png-n').value) || rows.length;
+      const t = imageText({ ...st, pc, n, total: rows.length, partialShown: rows.slice(0, n).some(r => r.st === '一部確認') });
+      $('#rk-sheet')?.remove();
+      app.insertAdjacentHTML('beforeend', rankSheetHTML(rows, n, { kind: st.kind, fy: st.fy, stage: st.stage, showPref: st.level === 'muni' && !pc, t }));
+      printSheet();
     });
     $('#rk-csv').addEventListener('click', () => {
       download(`ranking_${st.kind}_${st.level}${pc ? '_' + pc : ''}_${st.fy}_${st.stage}.csv`, toCSV(

@@ -5,7 +5,7 @@
 // 誤った金額を使わせないよう、合計を出さずに「確認中」と表示する。分類の基準は docs/分類と集計の基準.md
 
 import { db, loadDetail, loadPopulation, popOf, status, cell, munisOfPref, ratio, generalOf } from './store.js';
-import { $, $$, esc, yen, yenExact, yenPer, pct, num, diffYen, fyFull, fmtDate, download, copyText, toast, ratioPct, yenShort } from './util.js';
+import { $, $$, esc, yen, yenExact, yenPer, pct, num, diffYen, fyFull, fmtDate, download, copyText, toast, ratioPct, yenShort, printSheet } from './util.js';
 import { href, currentYear, currentStage, yearPicker, bindYearPicker } from './app.js';
 import { statusBadge, stLabel, relBadge, relName, fieldBadge, fieldLabel, sourceLink, sourceMeta, amountOrStatus, amountLabel, keywordBox, bindKeywordBox, ratioView, scopeNoteHTML } from './components.js';
 import { columnChart, lineChart, stackChart, COLORS } from './charts.js';
@@ -28,8 +28,8 @@ const FUND_ROWS = [
   { key: 'unknown', color: COLORS.fund.unknown, pattern: true },
 ];
 const fundLabel = r => r.label || FUND_LABELS[r.key];
-// 印刷するときは、事業の一覧の折りたたみ（合計に入れていない事業・別枠）を開いて印刷し、終わったら元に戻す。
-// 「この一覧を印刷する」ボタンのときは body に print-pj を付け、事業の一覧だけを印刷する（style.css の @media print）
+// ページ全体を印刷するときは、事業の一覧の折りたたみ（合計に入れていない事業・別枠）を開いて印刷し、終わったら元に戻す。
+// 「この一覧をA4の要約で印刷する」ボタンは、要約の表（#pj-sheet）だけを印刷する（util.js の printSheet）
 let printOpened = [];
 window.addEventListener('beforeprint', () => {
   printOpened = [...document.querySelectorAll('#proj-box details.grp:not([open])')];
@@ -38,7 +38,6 @@ window.addEventListener('beforeprint', () => {
 window.addEventListener('afterprint', () => {
   printOpened.forEach(d => { d.open = false; });
   printOpened = [];
-  document.body.classList.remove('print-pj');
 });
 
 export async function muniPage(ctx, code) {
@@ -199,7 +198,7 @@ export async function muniPage(ctx, code) {
     if (open && scroll) pjPanel.scrollIntoView({ block: 'start', behavior: 'smooth' });
   };
   pjBtn.addEventListener('click', () => showProjects(pjPanel.hidden, true));
-  $('#pj-print')?.addEventListener('click', () => { document.body.classList.add('print-pj'); window.print(); });
+  $('#pj-print')?.addEventListener('click', printSheet);
   if (openPj) showProjects(true, false);
   if ($('#muni-kw')) bindKeywordBox($('#muni-kw'), () => (m.isPref ? { p: m.pc } : { m: code }), fy);
 

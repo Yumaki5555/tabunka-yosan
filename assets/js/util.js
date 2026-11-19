@@ -70,6 +70,13 @@ export function download(filename, text, type = 'text/csv;charset=utf-8') {
   setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
 }
 
+// 印刷用の要約（class="print-sheet"。画面には出さない）だけを印刷する。body の print-sheet-mode で切り替え（style.css の @media print）
+export function printSheet() {
+  document.body.classList.add('print-sheet-mode');
+  window.addEventListener('afterprint', () => document.body.classList.remove('print-sheet-mode'), { once: true });
+  window.print();
+}
+
 let toastTimer;
 export function toast(msg) {
   const el = document.getElementById('toast');
